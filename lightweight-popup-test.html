@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>轻量级弹窗检测器测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .test-button:hover {
+            background: #0056b3;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 8px;
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: black;
+        }
+        
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 1001;
+        }
+        
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+        }
+        
+        .iframe-container {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .status-panel {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .status-item {
+            margin: 5px 0;
+            font-family: monospace;
+        }
+        
+        .success {
+            color: #28a745;
+        }
+        
+        .error {
+            color: #dc3545;
+        }
+        
+        .info {
+            color: #17a2b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>轻量级弹窗检测器测试</h1>
+        
+        <div class="status-panel">
+            <h3>检测器状态</h3>
+            <div class="status-item" id="detector-status">正在检查...</div>
+            <div class="status-item" id="cache-status">缓存状态: 未知</div>
+            <div class="status-item" id="detection-count">检测次数: 0</div>
+        </div>
+        
+        <div class="test-section">
+            <h3>测试按钮</h3>
+            <button class="test-button" onclick="showModal()">显示模态框</button>
+            <button class="test-button" onclick="showPopup()">显示弹窗</button>
+            <button class="test-button" onclick="showOverlay()">显示覆盖层</button>
+            <button class="test-button" onclick="forceDetect()">强制检测</button>
+            <button class="test-button" onclick="clearCache()">清理缓存</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>测试说明</h3>
+            <p>1. 点击"显示模态框"按钮，会显示一个包含iframe的模态框</p>
+            <p>2. 轻量级检测器应该能自动检测到弹窗中的iframe</p>
+            <p>3. 查看控制台日志了解检测过程</p>
+            <p>4. 使用"强制检测"按钮可以手动触发检测</p>
+        </div>
+        
+        <div class="test-section">
+            <h3>iframe测试内容</h3>
+            <div class="iframe-container">
+                <iframe src="data:text/html,
+                    <html>
+                        <body style='padding: 20px; font-family: Arial;'>
+                            <h2>iframe测试内容</h2>
+                            <p>这是一个测试iframe</p>
+                            <button onclick='alert(\"iframe按钮被点击\")'>点击我</button>
+                            <div>Hello World</div>
+                            <span>Test Text</span>
+                        </body>
+                    </html>
+                " width="100%" height="100%"></iframe>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 模态框 -->
+    <div id="testModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="hideModal()">&times;</span>
+            <h2>测试模态框</h2>
+            <p>这是一个包含iframe的模态框</p>
+            <iframe src="data:text/html,
+                <html>
+                    <body style='padding: 10px; font-family: Arial;'>
+                        <h3>模态框中的iframe</h3>
+                        <button onclick='alert(\"模态框iframe按钮\")'>模态框按钮</button>
+                        <div>Modal Content</div>
+                    </body>
+                </html>
+            " width="100%" height="200px"></iframe>
+        </div>
+    </div>
+    
+    <!-- 弹窗 -->
+    <div id="testPopup" class="popup">
+        <h3>测试弹窗</h3>
+        <p>这是一个弹窗</p>
+        <iframe src="data:text/html,
+            <html>
+                <body style='padding: 10px; font-family: Arial;'>
+                    <h4>弹窗中的iframe</h4>
+                    <button onclick='alert(\"弹窗iframe按钮\")'>弹窗按钮</button>
+                    <div>Popup Content</div>
+                </body>
+            </html>
+        " width="100%" height="150px"></iframe>
+        <br><br>
+        <button class="test-button" onclick="hidePopup()">关闭</button>
+    </div>
+    
+    <!-- 覆盖层 -->
+    <div id="testOverlay" class="overlay">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px;">
+            <h3>覆盖层</h3>
+            <p>这是一个覆盖层</p>
+            <iframe src="data:text/html,
+                <html>
+                    <body style='padding: 10px; font-family: Arial;'>
+                        <h4>覆盖层中的iframe</h4>
+                        <button onclick='alert(\"覆盖层iframe按钮\")'>覆盖层按钮</button>
+                        <div>Overlay Content</div>
+                    </body>
+                </html>
+            " width="100%" height="150px"></iframe>
+            <br><br>
+            <button class="test-button" onclick="hideOverlay()">关闭</button>
+        </div>
+    </div>
+
+    <script>
+        let detectionCount = 0;
+        
+        // 检查轻量级检测器状态
+        function checkDetectorStatus() {
+            const statusElement = document.getElementById('detector-status');
+            const cacheElement = document.getElementById('cache-status');
+            
+            if (typeof LightweightPopupDetector !== 'undefined') {
+                statusElement.innerHTML = '<span class="success">✓ 轻量级弹窗检测器已加载</span>';
+                
+                // 尝试获取检测器实例
+                if (window.translationTooltip && window.translationTooltip.lightweightPopupDetector) {
+                    const detector = window.translationTooltip.lightweightPopupDetector;
+                    const stats = detector.getStats();
+                    cacheElement.innerHTML = `缓存状态: ${stats.cacheSize} 项, 检测中: ${stats.isDetecting ? '是' : '否'}`;
+                } else {
+                    cacheElement.innerHTML = '缓存状态: 检测器未初始化';
+                }
+            } else {
+                statusElement.innerHTML = '<span class="error">✗ 轻量级弹窗检测器未加载</span>';
+                cacheElement.innerHTML = '缓存状态: 不可用';
+            }
+        }
+        
+        // 显示模态框
+        function showModal() {
+            document.getElementById('testModal').style.display = 'block';
+            console.log('显示模态框');
+            updateDetectionCount();
+        }
+        
+        // 隐藏模态框
+        function hideModal() {
+            document.getElementById('testModal').style.display = 'none';
+            console.log('隐藏模态框');
+        }
+        
+        // 显示弹窗
+        function showPopup() {
+            document.getElementById('testPopup').style.display = 'block';
+            console.log('显示弹窗');
+            updateDetectionCount();
+        }
+        
+        // 隐藏弹窗
+        function hidePopup() {
+            document.getElementById('testPopup').style.display = 'none';
+            console.log('隐藏弹窗');
+        }
+        
+        // 显示覆盖层
+        function showOverlay() {
+            document.getElementById('testOverlay').style.display = 'block';
+            console.log('显示覆盖层');
+            updateDetectionCount();
+        }
+        
+        // 隐藏覆盖层
+        function hideOverlay() {
+            document.getElementById('testOverlay').style.display = 'none';
+            console.log('隐藏覆盖层');
+        }
+        
+        // 强制检测
+        function forceDetect() {
+            if (window.translationTooltip && window.translationTooltip.lightweightPopupDetector) {
+                window.translationTooltip.lightweightPopupDetector.forceDetect();
+                console.log('强制检测已触发');
+                updateDetectionCount();
+            } else {
+                console.log('轻量级检测器不可用');
+            }
+        }
+        
+        // 清理缓存
+        function clearCache() {
+            if (window.translationTooltip && window.translationTooltip.lightweightPopupDetector) {
+                window.translationTooltip.lightweightPopupDetector.detectionCache.clear();
+                console.log('缓存已清理');
+                checkDetectorStatus();
+            } else {
+                console.log('轻量级检测器不可用');
+            }
+        }
+        
+        // 更新检测次数
+        function updateDetectionCount() {
+            detectionCount++;
+            document.getElementById('detection-count').innerHTML = `检测次数: ${detectionCount}`;
+        }
+        
+        // 页面加载完成后检查状态
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                checkDetectorStatus();
+            }, 2000); // 等待扩展加载
+        });
+        
+        // 定期更新状态
+        setInterval(checkDetectorStatus, 5000);
+        
+        // 监听用户交互，模拟检测器触发
+        document.addEventListener('click', function() {
+            setTimeout(() => {
+                checkDetectorStatus();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

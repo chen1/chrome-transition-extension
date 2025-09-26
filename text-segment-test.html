@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文本段翻译测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        
+        .test-container {
+            border: 2px solid #ccc;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        
+        .original {
+            background-color: #f0f0f0;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .translated {
+            background-color: #e8f5e8;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .button-group {
+            margin: 20px 0;
+        }
+        
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        .segment-info {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        
+        .segment-text {
+            font-weight: bold;
+            color: #856404;
+        }
+        
+        .segment-type {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        
+        .medType {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #f9f9f9;
+        }
+        
+        input[type="radio"] {
+            margin-right: 5px;
+        }
+        
+        label {
+            margin-right: 15px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>文本段翻译测试页面</h1>
+    
+    <div class="test-container">
+        <h2>测试案例1: 医疗类型选择</h2>
+        <div class="original">
+            <h3>原始元素:</h3>
+            <div class="medType" id="testElement1">
+                <!-- 国际化原值: HM001707=初诊 -->
+                <input name="times" type="radio" id="times1" checked="checked" value="初诊" onclick="checkDtminType()" disabled="disabled">Initial Visit
+                <!-- 国际化原值: HM002767=复诊 -->
+                <input name="times" type="radio" id="times2" value="复诊" onclick="checkDtminType()" disabled="disabled">Follow-Up Visit
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button onclick="translateElement('testElement1')">翻译此元素</button>
+            <button onclick="resetElement('testElement1')">重置元素</button>
+            <button onclick="showSegments('testElement1')">显示文本段分析</button>
+        </div>
+        
+        <div class="translated" id="translated1" style="display: none;">
+            <h3>翻译结果:</h3>
+            <div id="translatedContent1"></div>
+        </div>
+        
+        <div id="segmentsInfo1" style="display: none;">
+            <h3>文本段分析:</h3>
+            <div id="segmentsContent1"></div>
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h2>测试案例2: 复杂混合结构</h2>
+        <div class="original">
+            <h3>原始元素:</h3>
+            <div id="testElement2">
+                欢迎使用 <strong>系统名称</strong> 进行 <em>数据处理</em>。
+                请选择 <input type="checkbox" id="agree"> 同意条款。
+                更多信息请访问 <a href="#" onclick="showHelp()">帮助页面</a>。
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button onclick="translateElement('testElement2')">翻译此元素</button>
+            <button onclick="resetElement('testElement2')">重置元素</button>
+            <button onclick="showSegments('testElement2')">显示文本段分析</button>
+        </div>
+        
+        <div class="translated" id="translated2" style="display: none;">
+            <h3>翻译结果:</h3>
+            <div id="translatedContent2"></div>
+        </div>
+        
+        <div id="segmentsInfo2" style="display: none;">
+            <h3>文本段分析:</h3>
+            <div id="segmentsContent2"></div>
+        </div>
+    </div>
+
+    <script src="text-segment-translator.js"></script>
+    <script>
+        // 扩展翻译字典
+        const extendedTranslationDict = {
+            'Initial Visit': '初诊',
+            'Follow-Up Visit': '复诊',
+            '初诊': 'Initial Visit',
+            '复诊': 'Follow-Up Visit',
+            'Welcome to': '欢迎使用',
+            'system name': '系统名称',
+            'data processing': '数据处理',
+            'Please select': '请选择',
+            'agree to terms': '同意条款',
+            'For more information, please visit': '更多信息请访问',
+            'help page': '帮助页面',
+            'Welcome to': '欢迎使用',
+            'for': '进行',
+            'Please select': '请选择',
+            'For more information, please visit': '更多信息请访问'
+        };
+
+        // 创建翻译器实例
+        const translator = new TextSegmentTranslator();
+        
+        // 扩展翻译字典
+        Object.assign(translator.translationDict, extendedTranslationDict);
+
+        function translateElement(elementId) {
+            const element = document.getElementById(elementId);
+            if (!element) {
+                alert('未找到元素: ' + elementId);
+                return;
+            }
+
+            console.log('开始翻译元素:', element);
+            
+            // 保存原始内容
+            const originalHTML = element.innerHTML;
+            element.setAttribute('data-original-html', originalHTML);
+            
+            // 执行翻译
+            const result = translator.processElementTranslation(element);
+            
+            if (result) {
+                // 显示翻译结果
+                const translatedDiv = document.getElementById('translated' + elementId.slice(-1));
+                const translatedContent = document.getElementById('translatedContent' + elementId.slice(-1));
+                
+                if (translatedDiv && translatedContent) {
+                    translatedContent.innerHTML = result.reconstructedHTML;
+                    translatedDiv.style.display = 'block';
+                }
+                
+                // 应用翻译到原元素
+                translator.applyTranslation(element, result);
+                
+                console.log('翻译完成:', result);
+            }
+        }
+
+        function resetElement(elementId) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            const originalHTML = element.getAttribute('data-original-html');
+            if (originalHTML) {
+                element.innerHTML = originalHTML;
+            }
+            
+            // 隐藏翻译结果
+            const translatedDiv = document.getElementById('translated' + elementId.slice(-1));
+            if (translatedDiv) {
+                translatedDiv.style.display = 'none';
+            }
+        }
+
+        function showSegments(elementId) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            const segments = translator.analyzeElementStructure(element);
+            const segmentsDiv = document.getElementById('segmentsInfo' + elementId.slice(-1));
+            const segmentsContent = document.getElementById('segmentsContent' + elementId.slice(-1));
+            
+            if (segmentsDiv && segmentsContent) {
+                let html = '';
+                segments.forEach((segment, index) => {
+                    html += `
+                        <div class="segment-info">
+                            <div class="segment-type">段 ${index + 1} - 类型: ${segment.type}</div>
+                            <div class="segment-text">文本: "${segment.text}"</div>
+                            ${segment.element ? `<div>元素: ${segment.tagName}</div>` : ''}
+                            ${segment.attributes ? `<div>属性: ${JSON.stringify(segment.attributes)}</div>` : ''}
+                        </div>
+                    `;
+                });
+                
+                segmentsContent.innerHTML = html;
+                segmentsDiv.style.display = 'block';
+            }
+        }
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('文本段翻译测试页面已加载');
+            console.log('翻译器实例:', translator);
+        });
+    </script>
+</body>
+</html>

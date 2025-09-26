@@ -1,0 +1,365 @@
+<!--
+ * @Author: chenjie chenjie@huimei.com
+ * @Date: 2025-09-25 15:18:52
+ * @LastEditors: chenjie chenjie@huimei.com
+ * @LastEditTime: 2025-09-25 15:27:48
+ * @FilePath: /transition-extension/.cursor/rules/iframerule.mdc
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
+---
+description: iframe元素功能同步规则 - 确保iframe中元素支持与主页面相同的翻译功能
+globs: ["**/*.js", "**/*.html", "**/*.json"]
+alwaysApply: true
+---
+
+# iframe元素功能同步规则
+
+## 核心原则
+在处理逻辑时，不仅要保证主页面功能，同时还要保证iframe中元素支持同样功能。确保同步。
+
+## 功能同步要求
+
+### 1. 翻译功能同步
+- **主页面翻译功能**：鼠标悬浮显示翻译tooltip
+- **iframe内翻译功能**：iframe内部元素必须支持相同的翻译功能
+- **同步机制**：使用相同的翻译字典和翻译逻辑
+
+### 2. 事件处理同步
+- **主页面事件**：mouseover/mouseout事件绑定到document
+- **iframe内事件**：必须在iframe的document和body上绑定相同的事件监听器
+- **事件隔离**：iframe内事件不应触发主页面处理，主页面事件不应处理iframe内元素
+
+### 3. 文本段翻译同步
+- **主页面文本段翻译**：支持复杂文本结构的段翻译
+- **iframe内文本段翻译**：必须复用相同的TextSegmentTranslator逻辑
+- **显示格式同步**：使用相同的DisplayFormatter进行JSON格式显示
+
+### 4. 样式处理同步
+- **pointer-events修复**：主页面和iframe内都需要动态重置pointer-events样式
+- **tooltip样式**：iframe内tooltip使用特殊边框颜色区分（绿色边框）
+- **位置计算**：iframe内元素位置需要转换为主窗口坐标系
+
+## 实现要求
+
+### 1. IframeHandler类职责
+```javascript
+// 必须实现的核心方法
+- isIframe(element) // 检测iframe元素
+- isInsideIframe(element) // 检测元素是否在iframe内
+- handleIframeElement(iframeElement, event) // 处理iframe元素
+- bindIframeEvents(iframeElement, iframeDocument, iframeWindow) // 绑定iframe内事件
+- handleIframeTextSegmentTranslation(element, event, iframeElement) // 处理iframe内文本段翻译
+```
+
+### 2. 事件绑定同步
+- iframe内必须绑定mouseover/mouseout事件到iframeDocument和iframeDocument.body
+- 使用相同的延迟机制（300ms显示，200ms隐藏）
+- 实现MutationObserver监听iframe内容变化，重新绑定事件
+
+### 3. 翻译逻辑同步
+- iframe内元素必须使用相同的翻译字典
+- 复用TextSegmentTranslator的analyzeElementStructure和translateText方法
+- 使用相同的shouldUseTextSegmentTranslation判断逻辑
+
+### 4. 显示格式同步
+- iframe内tooltip使用DisplayFormatter进行JSON格式显示
+- 降级到HTML格式显示时保持一致的样式
+- 特殊样式标识iframe内tooltip（绿色边框）
+
+### 5. 位置计算同步
+- iframe内元素位置需要转换为主窗口坐标系
+- 使用getBoundingClientRect计算相对位置
+- 创建simulatedEvent对象用于tooltip定位
+
+## 错误处理要求
+
+### 1. 跨域处理
+- 检测跨域限制，无法访问iframe内容时显示基本信息
+- 提供降级方案，确保功能不中断
+
+### 2. 加载状态处理
+- 等待iframe文档完全加载（readyState === 'complete'）
+- 实现重试机制，最多重试5次
+- 监听DOMContentLoaded和load事件
+
+### 3. 异常恢复
+- 文本段翻译失败时降级到简单文本翻译
+- 显示格式化器不可用时使用默认格式
+- 确保任何情况下都能显示某种形式的tooltip
+
+## 性能优化要求
+
+### 1. 避免重复绑定
+- 使用boundIframes Set记录已绑定的iframe
+- 防止重复绑定事件监听器
+
+### 2. 内存管理
+- 实现cleanupIframeEvents方法清理事件监听器
+- 使用MutationObserver.disconnect()清理观察器
+- 及时清理定时器避免内存泄漏
+
+### 3. 深度限制
+- pointer-events检查限制在5层深度内
+- 避免无限递归和性能问题
+
+## 调试支持要求
+
+### 1. 详细日志
+- 记录iframe访问状态和绑定过程
+- 记录翻译结果和tooltip显示状态
+- 提供完整的错误堆栈信息
+
+### 2. 状态检查
+- 实现debugIframeStatus方法
+- 检查iframe基本信息、访问状态、文档信息
+- 验证translationTooltip各组件状态
+
+## 测试要求
+
+### 1. 功能测试
+- 测试iframe内简单文本翻译
+- 测试iframe内文本段翻译
+- 测试跨域iframe处理
+
+### 2. 兼容性测试
+- 测试不同iframe加载状态
+- 测试动态内容变化
+- 测试多个iframe同时存在
+
+### 3. 性能测试
+- 测试大量iframe的性能影响
+- 测试内存泄漏情况
+- 测试事件绑定效率
+
+## 组件化要求
+
+### 1. 组件提取原则
+- **同步修改识别**：识别需要同步修改的功能模块
+- **单一职责**：每个组件只负责一个特定功能
+- **接口统一**：组件间通过标准接口通信
+- **状态隔离**：组件内部状态与外部隔离
+
+### 2. 必须组件化的模块
+
+#### 2.1 翻译核心组件 (TranslationCore)
+```javascript
+// 职责：统一翻译逻辑，支持主页面和iframe
+class TranslationCore {
+  constructor(dictionary) {
+    this.dictionary = dictionary;
+    this.cache = new Map();
+  }
+  
+  // 核心翻译方法
+  translate(text, context = {}) { }
+  
+  // 批量翻译
+  translateBatch(texts) { }
+  
+  // 缓存管理
+  clearCache() { }
+}
+```
+
+#### 2.2 事件管理器组件 (EventManager)
+```javascript
+// 职责：统一事件绑定和管理
+class EventManager {
+  constructor() {
+    this.listeners = new Map();
+    this.boundElements = new Set();
+  }
+  
+  // 绑定事件
+  bindEvent(element, eventType, handler, options = {}) { }
+  
+  // 解绑事件
+  unbindEvent(element, eventType) { }
+  
+  // 清理所有事件
+  cleanup() { }
+}
+```
+
+#### 2.3 Tooltip显示组件 (TooltipDisplay)
+```javascript
+// 职责：统一tooltip显示逻辑
+class TooltipDisplay {
+  constructor(options = {}) {
+    this.options = { ...defaultOptions, ...options };
+    this.activeTooltips = new Set();
+  }
+  
+  // 显示tooltip
+  show(element, content, position = {}) { }
+  
+  // 隐藏tooltip
+  hide(element) { }
+  
+  // 更新位置
+  updatePosition(element, position) { }
+}
+```
+
+#### 2.4 文本段处理器组件 (TextSegmentProcessor)
+```javascript
+// 职责：处理复杂文本结构
+class TextSegmentProcessor {
+  constructor() {
+    this.translator = new TextSegmentTranslator();
+    this.formatter = new DisplayFormatter();
+  }
+  
+  // 分析文本结构
+  analyzeStructure(element) { }
+  
+  // 处理文本段翻译
+  processTextSegment(element) { }
+  
+  // 格式化显示
+  formatDisplay(data) { }
+}
+```
+
+#### 2.5 Iframe协调器组件 (IframeCoordinator)
+```javascript
+// 职责：协调iframe与主页面的交互
+class IframeCoordinator {
+  constructor() {
+    this.iframes = new Map();
+    this.coordinators = new Map();
+  }
+  
+  // 注册iframe
+  registerIframe(iframeElement) { }
+  
+  // 协调事件
+  coordinateEvent(event, context) { }
+  
+  // 同步状态
+  syncState(iframeElement, state) { }
+}
+```
+
+### 3. 组件通信机制
+
+#### 3.1 事件总线 (EventBus)
+```javascript
+// 职责：组件间解耦通信
+class EventBus {
+  constructor() {
+    this.events = new Map();
+  }
+  
+  // 订阅事件
+  subscribe(eventName, callback) { }
+  
+  // 发布事件
+  publish(eventName, data) { }
+  
+  // 取消订阅
+  unsubscribe(eventName, callback) { }
+}
+```
+
+#### 3.2 状态管理器 (StateManager)
+```javascript
+// 职责：统一状态管理
+class StateManager {
+  constructor() {
+    this.state = new Map();
+    this.subscribers = new Map();
+  }
+  
+  // 设置状态
+  setState(key, value) { }
+  
+  // 获取状态
+  getState(key) { }
+  
+  // 订阅状态变化
+  subscribe(key, callback) { }
+}
+```
+
+### 4. 组件生命周期管理
+
+#### 4.1 组件基类 (BaseComponent)
+```javascript
+// 职责：提供组件基础功能
+class BaseComponent {
+  constructor(options = {}) {
+    this.options = options;
+    this.isInitialized = false;
+    this.isDestroyed = false;
+  }
+  
+  // 初始化
+  init() { }
+  
+  // 销毁
+  destroy() { }
+  
+  // 更新
+  update(options) { }
+}
+```
+
+#### 4.2 组件注册器 (ComponentRegistry)
+```javascript
+// 职责：管理组件注册和实例化
+class ComponentRegistry {
+  constructor() {
+    this.components = new Map();
+    this.instances = new Map();
+  }
+  
+  // 注册组件
+  register(name, componentClass) { }
+  
+  // 创建实例
+  create(name, options = {}) { }
+  
+  // 销毁实例
+  destroy(name, instanceId) { }
+}
+```
+
+### 5. 组件化实施要求
+
+#### 5.1 重构步骤
+1. **识别重复代码**：找出需要同步修改的代码块
+2. **提取公共逻辑**：将重复逻辑提取为独立组件
+3. **定义接口**：为每个组件定义清晰的接口
+4. **实现组件**：按照接口实现组件功能
+5. **替换调用**：将原有代码替换为组件调用
+6. **测试验证**：确保功能正常且性能良好
+
+#### 5.2 组件设计原则
+- **高内聚低耦合**：组件内部紧密相关，组件间松散耦合
+- **可复用性**：组件可以在不同场景下复用
+- **可测试性**：组件可以独立进行单元测试
+- **可扩展性**：组件支持功能扩展和配置
+
+#### 5.3 同步修改保证
+- **统一接口**：所有需要同步的功能使用相同接口
+- **配置驱动**：通过配置控制不同环境的行为
+- **事件通知**：组件间通过事件通知状态变化
+- **状态同步**：确保主页面和iframe状态一致
+
+## 代码质量要求
+
+### 1. 代码复用
+- 最大化复用主页面翻译逻辑
+- 避免重复实现相同功能
+- 使用统一的工具类和方法
+
+### 2. 错误处理
+- 所有异步操作都要有错误处理
+- 提供有意义的错误信息
+- 实现优雅降级
+
+### 3. 代码注释
+- 详细注释所有关键方法
+- 说明iframe特殊处理逻辑
+- 提供使用示例和注意事项

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>元素对象缓存测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .popup {
+            width: 200px;
+            height: 100px;
+            background: #f0f0f0;
+            border: 2px solid #333;
+            margin: 10px;
+            padding: 10px;
+            display: inline-block;
+        }
+        button {
+            margin: 5px;
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>元素对象缓存测试</h1>
+    
+    <div class="test-section">
+        <h2>测试说明</h2>
+        <p>这个测试验证使用元素对象作为缓存键的有效性：</p>
+        <ul>
+            <li>创建多个具有相同属性的元素</li>
+            <li>验证它们被正确识别为不同的对象</li>
+            <li>测试WeakMap的自动垃圾回收</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>测试操作</h2>
+        <button onclick="createTestElements()">创建测试元素</button>
+        <button onclick="testCacheKeys()">测试缓存键</button>
+        <button onclick="testWeakMapBehavior()">测试WeakMap行为</button>
+        <button onclick="clearLog()">清空日志</button>
+    </div>
+
+    <div class="test-section">
+        <h2>测试元素区域</h2>
+        <div id="testContainer"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>测试日志</h2>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        // 模拟轻量级弹窗检测器的缓存机制
+        class TestCache {
+            constructor() {
+                this.detectionCache = new WeakMap();
+            }
+
+            getCacheKey(popup) {
+                return popup; // 直接使用元素对象作为键
+            }
+
+            addToCache(element) {
+                const key = this.getCacheKey(element);
+                if (this.detectionCache.has(key)) {
+                    log(`元素已存在于缓存中: ${element.tagName}#${element.id || 'no-id'}`);
+                    return false;
+                } else {
+                    this.detectionCache.set(key, Date.now());
+                    log(`元素已添加到缓存: ${element.tagName}#${element.id || 'no-id'}`);
+                    return true;
+                }
+            }
+
+            isInCache(element) {
+                return this.detectionCache.has(element);
+            }
+        }
+
+        const testCache = new TestCache();
+        let testElements = [];
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        function createTestElements() {
+            const container = document.getElementById('testContainer');
+            container.innerHTML = '';
+            testElements = [];
+
+            // 创建多个具有相同属性的元素
+            for (let i = 0; i < 5; i++) {
+                const element = document.createElement('div');
+                element.className = 'popup';
+                element.id = `popup-${i}`;
+                element.textContent = `弹窗 ${i + 1}`;
+                container.appendChild(element);
+                testElements.push(element);
+            }
+
+            log(`创建了 ${testElements.length} 个测试元素`);
+        }
+
+        function testCacheKeys() {
+            if (testElements.length === 0) {
+                log('请先创建测试元素');
+                return;
+            }
+
+            log('开始测试缓存键...');
+
+            // 测试每个元素
+            testElements.forEach((element, index) => {
+                const added = testCache.addToCache(element);
+                log(`元素 ${index + 1}: ${added ? '新添加' : '已存在'}`);
+            });
+
+            // 再次测试相同元素
+            log('再次测试相同元素...');
+            testElements.forEach((element, index) => {
+                const added = testCache.addToCache(element);
+                log(`元素 ${index + 1}: ${added ? '新添加' : '已存在'}`);
+            });
+
+            // 测试相同属性但不同对象
+            log('测试相同属性但不同对象...');
+            const newElement = document.createElement('div');
+            newElement.className = 'popup';
+            newElement.id = 'popup-0'; // 与第一个元素相同的ID
+            newElement.textContent = '新弹窗';
+            
+            const added = testCache.addToCache(newElement);
+            log(`相同属性的新元素: ${added ? '新添加' : '已存在'}`);
+        }
+
+        function testWeakMapBehavior() {
+            log('测试WeakMap的垃圾回收行为...');
+            
+            // 创建临时元素
+            const tempElement = document.createElement('div');
+            tempElement.className = 'popup';
+            tempElement.id = 'temp-popup';
+            tempElement.textContent = '临时弹窗';
+            
+            // 添加到缓存
+            testCache.addToCache(tempElement);
+            log('临时元素已添加到缓存');
+            
+            // 检查是否在缓存中
+            const inCache = testCache.isInCache(tempElement);
+            log(`临时元素在缓存中: ${inCache}`);
+            
+            // 移除元素引用
+            tempElement.remove();
+            log('临时元素已从DOM移除');
+            
+            // 注意：WeakMap的垃圾回收是异步的，可能不会立即生效
+            // 这里主要是演示概念
+            log('注意：WeakMap会在垃圾回收时自动清理已移除的元素');
+        }
+
+        // 页面加载完成后的初始化
+        window.addEventListener('load', () => {
+            log('页面加载完成，可以开始测试');
+        });
+    </script>
+</body>
+</html>

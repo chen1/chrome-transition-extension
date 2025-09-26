@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "文本翻译悬浮提示",
+  "version": "1.0.0",
+  "description": "鼠标悬浮元素时显示中文翻译",
+  "permissions": [
+    "activeTab"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["translation-service.js", "text-segment-translator.js", "display-formatter.js", "iframe-handler.js", "lightweight-popup-detector.js", "content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["translation-dict.json", "test-dict.json"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "action": {
+    "default_title": "文本翻译悬浮提示"
+  }
+}

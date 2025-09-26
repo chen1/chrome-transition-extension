@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iframe内容页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #e9ecef;
+            padding: 15px;
+        }
+        
+        .iframe-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        
+        .button-group {
+            margin: 15px 0;
+        }
+        
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background-color: #218838;
+        }
+        
+        .text-element {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            cursor: pointer;
+        }
+        
+        .text-element:hover {
+            background-color: #e9ecef;
+        }
+        
+        .mixed-content {
+            margin: 15px 0;
+            padding: 15px;
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+        }
+        
+        .highlight {
+            background-color: #ffeb3b;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+        
+        .form-group {
+            margin: 15px 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .table-container {
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .status-ready {
+            background-color: #28a745;
+        }
+        
+        .status-loading {
+            background-color: #ffc107;
+        }
+        
+        .status-error {
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="iframe-content">
+        <h2>iframe内容测试页面</h2>
+        
+        <div class="status-indicator status-ready"></div>
+        <span>iframe已加载完成，可以测试事件绑定</span>
+        
+        <div class="button-group">
+            <button onclick="showAlert('Button Clicked')">Click Me</button>
+            <button onclick="showAlert('Submit Button')">Submit</button>
+            <button onclick="showAlert('Cancel Button')">Cancel</button>
+            <button onclick="showAlert('Save Button')">Save</button>
+        </div>
+        
+        <div class="text-element">
+            <strong>这是一个文本元素</strong> - 鼠标悬浮应该显示翻译
+        </div>
+        
+        <div class="text-element">
+            <span>Hello World</span> - 英文文本测试
+        </div>
+        
+        <div class="text-element">
+            <span>Welcome to our website</span> - 欢迎文本
+        </div>
+        
+        <div class="mixed-content">
+            <p>这是一个混合内容元素，包含 <strong>粗体文本</strong> 和 <em>斜体文本</em>，还有 <span class="highlight">高亮文本</span>。</p>
+            <p>Mixed content with <strong>bold text</strong> and <em>italic text</em>.</p>
+        </div>
+        
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" placeholder="Enter your username">
+        </div>
+        
+        <div class="form-group">
+            <label for="email">Email Address:</label>
+            <input type="email" id="email" placeholder="Enter your email">
+        </div>
+        
+        <div class="form-group">
+            <label for="message">Message:</label>
+            <textarea id="message" rows="3" placeholder="Enter your message"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="country">Country:</label>
+            <select id="country">
+                <option value="">Select Country</option>
+                <option value="us">United States</option>
+                <option value="uk">United Kingdom</option>
+                <option value="ca">Canada</option>
+                <option value="au">Australia</option>
+            </select>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Price</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Laptop Computer</td>
+                        <td>$999.99</td>
+                        <td>In Stock</td>
+                        <td><button onclick="showAlert('Buy Laptop')">Buy Now</button></td>
+                    </tr>
+                    <tr>
+                        <td>Smartphone</td>
+                        <td>$699.99</td>
+                        <td>Limited Stock</td>
+                        <td><button onclick="showAlert('Buy Smartphone')">Buy Now</button></td>
+                    </tr>
+                    <tr>
+                        <td>Tablet</td>
+                        <td>$399.99</td>
+                        <td>Out of Stock</td>
+                        <td><button onclick="showAlert('Buy Tablet')">Buy Now</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="text-element">
+            <p>测试链接: <a href="#" onclick="showAlert('Link Clicked'); return false;">Click here for more information</a></p>
+        </div>
+        
+        <div class="text-element">
+            <p>更多测试文本: <span>Login</span> | <span>Register</span> | <span>Forgot Password</span></p>
+        </div>
+    </div>
+
+    <script>
+        function showAlert(message) {
+            alert('iframe内按钮点击: ' + message);
+        }
+        
+        // 页面加载完成后的日志
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('iframe内容页面加载完成');
+            console.log('iframe内元素数量:', document.querySelectorAll('*').length);
+            console.log('iframe内按钮数量:', document.querySelectorAll('button').length);
+            console.log('iframe内文本元素数量:', document.querySelectorAll('span, div, p').length);
+        });
+        
+        // 监听鼠标事件
+        document.addEventListener('mouseover', function(event) {
+            console.log('iframe内鼠标悬浮事件:', {
+                target: event.target.tagName,
+                text: event.target.textContent?.trim(),
+                className: event.target.className
+            });
+        });
+        
+        document.addEventListener('mouseout', function(event) {
+            console.log('iframe内鼠标离开事件:', {
+                target: event.target.tagName,
+                text: event.target.textContent?.trim()
+            });
+        });
+    </script>
+</body>
+</html>

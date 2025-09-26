@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iframe JSON格式显示测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .test-section h2 {
+            color: #555;
+            margin-top: 0;
+        }
+        .iframe-container {
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+            margin: 20px 0;
+            background: white;
+        }
+        .iframe-container h3 {
+            margin: 0;
+            padding: 10px;
+            background: #4CAF50;
+            color: white;
+            border-radius: 6px 6px 0 0;
+        }
+        iframe {
+            width: 100%;
+            height: 300px;
+            border: none;
+            border-radius: 0 0 6px 6px;
+        }
+        .description {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid #2196F3;
+        }
+        .description h4 {
+            margin-top: 0;
+            color: #1976D2;
+        }
+        .test-element {
+            margin: 10px 0;
+            padding: 10px;
+            background: #fff3e0;
+            border-radius: 4px;
+            border-left: 4px solid #FF9800;
+        }
+        .mixed-content {
+            background: #f3e5f5;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border-left: 4px solid #9C27B0;
+        }
+        .mixed-content span {
+            color: #7B1FA2;
+            font-weight: bold;
+        }
+        .mixed-content strong {
+            color: #E91E63;
+        }
+        .mixed-content em {
+            color: #673AB7;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>iframe JSON格式显示测试</h1>
+        
+        <div class="description">
+            <h4>测试说明</h4>
+            <p>此页面用于测试iframe中元素的JSON格式翻译显示功能。将鼠标悬浮在iframe内的元素上，应该能看到JSON格式的翻译结果。</p>
+        </div>
+
+        <div class="test-section">
+            <h2>测试1: 简单文本翻译</h2>
+            <div class="iframe-container">
+                <h3>iframe内容 - 简单文本</h3>
+                <iframe src="data:text/html;charset=utf-8,
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>
+                            body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
+                            .test-element { margin: 15px 0; padding: 10px; background: white; border-radius: 4px; border-left: 4px solid #4CAF50; }
+                        </style>
+                    </head>
+                    <body>
+                        <h2>简单文本测试</h2>
+                        <div class='test-element'>Hello World</div>
+                        <div class='test-element'>Welcome to our website</div>
+                        <div class='test-element'>Click here to continue</div>
+                        <div class='test-element'>Save changes</div>
+                        <div class='test-element'>Cancel operation</div>
+                    </body>
+                    </html>
+                "></iframe>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>测试2: 混合节点结构翻译</h2>
+            <div class="iframe-container">
+                <h3>iframe内容 - 混合节点</h3>
+                <iframe src="data:text/html;charset=utf-8,
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>
+                            body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
+                            .mixed-content { margin: 15px 0; padding: 15px; background: white; border-radius: 4px; border-left: 4px solid #9C27B0; }
+                            .mixed-content span { color: #7B1FA2; font-weight: bold; }
+                            .mixed-content strong { color: #E91E63; }
+                            .mixed-content em { color: #673AB7; font-style: italic; }
+                        </style>
+                    </head>
+                    <body>
+                        <h2>混合节点结构测试</h2>
+                        <div class='mixed-content'>
+                            Welcome to <span>our website</span> where you can find <strong>amazing</strong> content and <em>excellent</em> services.
+                        </div>
+                        <div class='mixed-content'>
+                            Please <span>click here</span> to <strong>continue</strong> with your <em>registration</em> process.
+                        </div>
+                        <div class='mixed-content'>
+                            Thank you for <span>visiting</span> our <strong>platform</strong> and <em>enjoying</em> our services.
+                        </div>
+                        <div class='mixed-content'>
+                            <span>Initial Visit</span> - Complete your <strong>profile</strong> and <em>preferences</em>.
+                        </div>
+                        <div class='mixed-content'>
+                            <span>Follow-Up Visit</span> - Review your <strong>progress</strong> and <em>updates</em>.
+                        </div>
+                    </body>
+                    </html>
+                "></iframe>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>测试3: 复杂嵌套结构</h2>
+            <div class="iframe-container">
+                <h3>iframe内容 - 复杂嵌套</h3>
+                <iframe src="data:text/html;charset=utf-8,
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>
+                            body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
+                            .complex-structure { margin: 15px 0; padding: 15px; background: white; border-radius: 4px; border-left: 4px solid #FF5722; }
+                            .complex-structure .header { font-size: 18px; font-weight: bold; color: #D84315; margin-bottom: 10px; }
+                            .complex-structure .content { color: #666; line-height: 1.6; }
+                            .complex-structure .footer { margin-top: 10px; font-size: 12px; color: #999; }
+                        </style>
+                    </head>
+                    <body>
+                        <h2>复杂嵌套结构测试</h2>
+                        <div class='complex-structure'>
+                            <div class='header'>User Dashboard</div>
+                            <div class='content'>
+                                Welcome back! Your <strong>account status</strong> is <em>active</em> and you have <span>5 new messages</span>.
+                            </div>
+                            <div class='footer'>
+                                Last login: <span>Today</span> at <strong>10:30 AM</strong>
+                            </div>
+                        </div>
+                        <div class='complex-structure'>
+                            <div class='header'>Settings Panel</div>
+                            <div class='content'>
+                                Configure your <strong>preferences</strong> and <em>notifications</em> settings here.
+                            </div>
+                            <div class='footer'>
+                                Changes will be <span>saved automatically</span>
+                            </div>
+                        </div>
+                        <div class='complex-structure'>
+                            <div class='header'>Help Center</div>
+                            <div class='content'>
+                                Find answers to <strong>common questions</strong> and <em>troubleshooting</em> guides.
+                            </div>
+                            <div class='footer'>
+                                Need more help? <span>Contact support</span>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                "></iframe>
+            </div>
+        </div>
+
+        <div class="description">
+            <h4>预期结果</h4>
+            <ul>
+                <li><strong>简单文本</strong>: 显示JSON格式的翻译结果，包含原始文本和翻译文本</li>
+                <li><strong>混合节点</strong>: 显示JSON格式的分段翻译结果，每个文本段和元素节点分别处理</li>
+                <li><strong>复杂嵌套</strong>: 显示JSON格式的完整结构分析，包含元素信息和所有文本段</li>
+                <li><strong>样式区分</strong>: iframe内的tooltip应该有绿色边框，区别于主窗口的样式</li>
+            </ul>
+        </div>
+
+        <div class="description">
+            <h4>调试信息</h4>
+            <p>打开浏览器开发者工具的控制台，可以看到详细的调试信息，包括：</p>
+            <ul>
+                <li>iframe事件绑定过程</li>
+                <li>文本段分析结果</li>
+                <li>翻译处理过程</li>
+                <li>JSON格式化过程</li>
+                <li>tooltip显示过程</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // 添加一些调试信息
+        console.log('=== iframe JSON格式显示测试页面加载完成 ===');
+        console.log('页面URL:', window.location.href);
+        console.log('iframe数量:', document.querySelectorAll('iframe').length);
+        
+        // 监听iframe加载事件
+        document.querySelectorAll('iframe').forEach((iframe, index) => {
+            iframe.addEventListener('load', () => {
+                console.log(`iframe ${index + 1} 加载完成`);
+            });
+        });
+    </script>
+</body>
+</html>
