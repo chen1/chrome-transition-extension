@@ -1,3 +1,11 @@
+/*
+ * @Author: chenjie chenjie@huimei.com
+ * @Date: 2025-09-25 16:55:21
+ * @LastEditors: chenjie chenjie@huimei.com
+ * @LastEditTime: 2025-09-26 17:35:14
+ * @FilePath: /transition-extension/iframe-handler.js
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 /**
  * iframe处理模块
  * 负责处理iframe元素的识别、事件绑定和内部元素翻译
@@ -5,9 +13,10 @@
 class IframeHandler {
   constructor(translationTooltip) {
     this.translationTooltip = translationTooltip;
-    this.boundIframes = new Set(); // 记录已绑定的iframe
+    this.iframeCacheManager = null; // iframe缓存管理器
     this.displayFormatter = null; // 显示格式化器
     this.initDisplayFormatter();
+    this.initIframeCacheManager();
     // // console.log('IframeHandler 初始化完成');
   }
 
@@ -27,6 +36,34 @@ class IframeHandler {
     } catch (error) {
       // // console.error('初始化显示格式化器失败:', error);
     }
+  }
+
+  /**
+   * 初始化iframe缓存管理器
+   */
+  initIframeCacheManager() {
+    // // console.log('初始化iframe缓存管理器');
+    try {
+      // IframeCacheManager 应该总是可用的，因为它在 manifest.json 中声明
+      this.iframeCacheManager = new IframeCacheManager();
+      // 启动定期清理机制
+      this.iframeCacheManager.startPeriodicCleanup();
+      // // console.log('iframe缓存管理器初始化成功');
+    } catch (error) {
+      // // console.error('初始化iframe缓存管理器失败:', error);
+      throw new Error('IframeCacheManager 初始化失败，这是必需的组件');
+    }
+  }
+
+  /**
+   * 获取缓存管理器
+   * @returns {IframeCacheManager} - 缓存管理器
+   */
+  getCache() {
+    if (!this.iframeCacheManager) {
+      throw new Error('IframeCacheManager 未初始化');
+    }
+    return this.iframeCacheManager;
   }
 
   /**
@@ -59,15 +96,21 @@ class IframeHandler {
    */
   isIframeTrulyReady(iframeElement, iframeDocument, iframeWindow) {
     // 1. 检查iframe元素本身
-    if (!iframeElement || !iframeElement.src) {
-      // console.log('iframe元素src无效:', iframeElement?.src);
+    if (!iframeElement) {
+      // console.log('iframe元素无效');
       return false;
     }
     
-    // 特殊处理about:blank
+    // 特殊处理about:blank - 完全跳过
     if (iframeElement.src === 'about:blank') {
       // console.log('iframe src为about:blank，无法绑定事件');
       return false;
+    }
+    
+    // 对于src为空的情况，仍然尝试检查内容
+    if (!iframeElement.src || iframeElement.src === '') {
+      // console.log('iframe src为空，但尝试检查是否有动态内容');
+      // 不直接返回false，继续后续检查
     }
     
     // 2. 检查iframe窗口和文档
@@ -181,13 +224,15 @@ class IframeHandler {
     
     try {
       // 检查是否已经绑定过事件（避免重复绑定）
-      if (this.boundIframes.has(iframeElement)) {
+      const cache = this.getCache();
+      if (cache.hasIframe(iframeElement)) {
         console.log('iframe事件已绑定，跳过:', iframeWindow.location ? iframeWindow.location.href : 'unknown');
         return;
       }
       
       // 标记已绑定
-      this.boundIframes.add(iframeElement);
+      cache.addIframe(iframeElement, iframeElement.ownerDocument);
+      console.log('iframe缓存状态:', cache.getStats());
       
       // 为iframe创建独立的弹窗检测器
       this.initIframePopupDetector(iframeElement, iframeDocument, iframeWindow);
@@ -328,28 +373,31 @@ class IframeHandler {
       }
       
       // 监听iframe内容变化，重新绑定事件
-      const observer = new MutationObserver((mutations) => {
-        // console.log('iframe内容发生变化，检查是否需要重新绑定事件');
-        
-        // 检查是否有实际的内容变化
-        let hasSignificantChange = false;
-        mutations.forEach(mutation => {
-          if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-            // 检查新增的节点是否包含可交互元素
-            mutation.addedNodes.forEach(node => {
-              if (node.nodeType === Node.ELEMENT_NODE) {
-                const interactiveElements = node.querySelectorAll ? 
-                  node.querySelectorAll('button, a, span, div, p, li, td, th, input, textarea, select') : [];
-                if (interactiveElements.length > 0) {
-                  hasSignificantChange = true;
-                }
-              }
+      // 使用共享的DOM监听器模块
+      const iframeSharedObserver = new SharedDOMObserver({
+        context: 'iframe',
+        debug: true,
+        observeConfig: {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['style', 'class', 'hidden', 'aria-hidden', 'src']
+        },
+        // 添加新iframe检测回调
+        onNewIframe: (newIframes, observerId) => {
+          console.log('iframe内部检测到新iframe:', newIframes.length);
+          newIframes.forEach(iframe => {
+            console.log('处理iframe内部的新iframe:', {
+              src: iframe.src,
+              id: iframe.id,
+              className: iframe.className,
+              parentElement: iframe.parentElement?.tagName
             });
-          }
-        });
-        
-        // 只有在有重要变化时才重新绑定
-        if (hasSignificantChange) {
+            // 尝试绑定新iframe的事件
+            this.tryBindIframeEvents(iframe, 0);
+          });
+        },
+        onSignificantChange: (observerId) => {
           console.log('iframe内容发生重要变化，重新绑定事件');
           
           // 移除旧的事件监听器
@@ -370,17 +418,13 @@ class IframeHandler {
           }, 100);
         }
       });
-      
-      // 开始观察iframe内容变化
-      if (iframeDocument.body) {
-        observer.observe(iframeDocument.body, {
-          childList: true,
-          subtree: true
-        });
-      }
+
+      // 创建并启动iframe内容监听器
+      const observer = iframeSharedObserver.createObserver(iframeDocument.body, `iframe-${iframeElement.id || 'unknown'}`);
       
       // 存储observer引用，用于清理
       iframeElement._translationObserver = observer;
+      iframeElement._sharedDOMObserver = iframeSharedObserver;
       
       console.log('iframe事件绑定完成，等待内部元素事件');
       
@@ -783,14 +827,26 @@ class IframeHandler {
         delete iframeElement._translationObserver;
       }
       
+      // 移除共享DOM监听器
+      if (iframeElement._sharedDOMObserver) {
+        iframeElement._sharedDOMObserver.disconnectAll();
+        delete iframeElement._sharedDOMObserver;
+      }
+      
       // 移除src变化监听器
       if (iframeElement._srcChangeObserver) {
         iframeElement._srcChangeObserver.disconnect();
         delete iframeElement._srcChangeObserver;
       }
       
+      // 移除src变化共享DOM监听器
+      if (iframeElement._srcChangeSharedObserver) {
+        iframeElement._srcChangeSharedObserver.disconnectAll();
+        delete iframeElement._srcChangeSharedObserver;
+      }
+      
       // 从已绑定集合中移除
-      this.boundIframes.delete(iframeElement);
+      this.getCache().removeIframe(iframeElement);
       
       // console.log('iframe事件清理完成');
     } catch (error) {
@@ -805,11 +861,12 @@ class IframeHandler {
   cleanupAllIframeEvents() {
     // console.log('=== IframeHandler: 清理所有iframe事件 ===');
     
-    this.boundIframes.forEach(iframeElement => {
+    const cache = this.getCache();
+    const allIframes = cache.getAllIframes();
+    allIframes.forEach(iframeElement => {
       this.cleanupIframeEvents(iframeElement);
     });
-    
-    this.boundIframes.clear();
+    cache.clearAll();
     // console.log('所有iframe事件清理完成');
   }
 
@@ -834,7 +891,8 @@ class IframeHandler {
 // });
       
       // 检查是否已经绑定过
-      if (this.boundIframes.has(iframe)) {
+      const cache = this.getCache();
+      if (cache.hasIframe(iframe)) {
         // console.log(`iframe ${index + 1} 已绑定，跳过`);
         return;
       }
@@ -854,38 +912,39 @@ class IframeHandler {
    * @param {Element} iframe - iframe元素
    */
   addIframeSrcChangeListener(iframe) {
-    // 监听iframe的src属性变化
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'src') {
-          const oldSrc = mutation.oldValue || 'unknown';
-          const newSrc = iframe.src;
-          console.log('检测到iframe src变化:', oldSrc, '->', newSrc);
-          
-          // 特殊处理从about:blank到实际URL的变化
-          if (oldSrc === 'about:blank' && newSrc !== 'about:blank') {
-            console.log('iframe从about:blank加载到实际内容，延迟绑定事件');
-            setTimeout(() => {
-              this.tryBindIframeEvents(iframe, 0); // 重置重试次数
-            }, 2000); // 给更多时间加载
-          } else if (newSrc !== 'about:blank') {
-            // 其他src变化
-            setTimeout(() => {
-              this.tryBindIframeEvents(iframe, 0); // 重置重试次数
-            }, 1000);
-          }
+    // 使用共享的DOM监听器模块
+    const srcChangeObserver = new SharedDOMObserver({
+      context: 'iframe-src',
+      debug: true,
+      observeConfig: {
+        attributes: true,
+        attributeFilter: ['src'],
+        attributeOldValue: true
+      },
+      onIframeSrcChange: (srcChange, observerId) => {
+        const { iframe: targetIframe, oldSrc, newSrc } = srcChange;
+        
+        // 特殊处理从about:blank到实际URL的变化
+        if (oldSrc === 'about:blank' && newSrc !== 'about:blank') {
+          console.log('iframe从about:blank加载到实际内容，延迟绑定事件');
+          setTimeout(() => {
+            this.tryBindIframeEvents(targetIframe, 0); // 重置重试次数
+          }, 2000); // 给更多时间加载
+        } else if (newSrc !== 'about:blank') {
+          // 其他src变化
+          setTimeout(() => {
+            this.tryBindIframeEvents(targetIframe, 0); // 重置重试次数
+          }, 1000);
         }
-      });
+      }
     });
-    
-    observer.observe(iframe, {
-      attributes: true,
-      attributeFilter: ['src'],
-      attributeOldValue: true // 记录旧值
-    });
+
+    // 创建并启动src变化监听器
+    const observer = srcChangeObserver.createObserver(iframe, `src-${iframe.id || 'unknown'}`);
     
     // 存储observer引用
     iframe._srcChangeObserver = observer;
+    iframe._srcChangeSharedObserver = srcChangeObserver;
   }
 
   /**
@@ -897,7 +956,8 @@ class IframeHandler {
     const maxRetries = 5; // 最大重试次数
     
     // 检查是否已经绑定过
-    if (this.boundIframes.has(iframe)) {
+    const cache = this.getCache();
+    if (cache.hasIframe(iframe)) {
       // console.log('iframe已绑定，跳过:', iframe.src);
       return;
     }
@@ -929,12 +989,30 @@ class IframeHandler {
     
     // 检查iframe是否有有效的src
     if (!iframe.src || iframe.src === '') {
-      // console.log(`iframe src为空，延迟重试(${retryCount + 1}/${maxRetries}):`, iframe.src);
-      // 延迟重试
-      setTimeout(() => {
-        this.tryBindIframeEvents(iframe, retryCount + 1);
-      }, 2000);
-      return;
+      // console.log(`iframe src为空，尝试直接访问内容(${retryCount + 1}/${maxRetries}):`, iframe.src);
+      // 对于src为空的iframe，仍然尝试访问其内容，因为可能通过JavaScript动态写入
+      // 如果无法访问，则延迟重试
+      try {
+        const iframeWindow = iframe.contentWindow;
+        const iframeDocument = iframe.contentDocument;
+        
+        if (!iframeWindow || !iframeDocument) {
+          // console.log(`src为空的iframe无法访问，延迟重试(${retryCount + 1}/${maxRetries})`);
+          setTimeout(() => {
+            this.tryBindIframeEvents(iframe, retryCount + 1);
+          }, 2000);
+          return;
+        }
+        
+        // 如果能够访问，继续后续的检查流程
+        console.log('src为空的iframe可以访问，继续检查内容');
+      } catch (error) {
+        // console.log(`src为空的iframe访问出错，延迟重试(${retryCount + 1}/${maxRetries}):`, error);
+        setTimeout(() => {
+          this.tryBindIframeEvents(iframe, retryCount + 1);
+        }, 2000);
+        return;
+      }
     }
     
     // 尝试访问iframe内容
@@ -1005,24 +1083,6 @@ class IframeHandler {
       const iframeWindow = iframeElement.contentWindow;
       const iframeDocument = iframeElement.contentDocument;
       
-      // console.log('iframe基本信息:', {
-//         id: iframeElement.id,
-//         src: iframeElement.src,
-//         width: iframeElement.width,
-//         height: iframeElement.height,
-//         className: iframeElement.className,
-//         isBound: this.boundIframes.has(iframeElement)
-
-// });
-      
-      // console.log('iframe访问状态:', {
-//         canAccessWindow: !!iframeWindow,
-//         canAccessDocument: !!iframeDocument,
-//         documentReadyState: iframeDocument ? iframeDocument.readyState : 'N/A',
-//         hasBody: iframeDocument ? !!iframeDocument.body : false,
-//         bodyChildrenCount: iframeDocument && iframeDocument.body ? iframeDocument.body.children.length : 0
-
-// });
       
       if (iframeDocument) {
         // console.log('iframe文档信息:', {
@@ -1049,33 +1109,57 @@ class IframeHandler {
   }
 
   /**
-   * 为iframe内部设置弹窗检测功能
-   * 复用轻量级弹窗检测器
+   * 为iframe初始化独立的弹窗检测器
+   * @param {Element} iframeElement - iframe元素
+   * @param {Document} iframeDocument - iframe文档
+   * @param {Window} iframeWindow - iframe窗口
+   */
+  initIframePopupDetector(iframeElement, iframeDocument, iframeWindow) {
+    try {
+      // 检查iframe是否已经有弹窗检测器
+      if (iframeWindow.lightweightPopupDetector) {
+        console.log('iframe已有弹窗检测器，跳过初始化:', iframeWindow.location?.href);
+        return;
+      }
+      
+      // 检查LightweightPopupDetector是否可用
+      if (typeof LightweightPopupDetector !== 'undefined') {
+        console.log('为iframe创建独立弹窗检测器:', iframeWindow.location?.href);
+        
+        // 创建iframe专用的弹窗检测器
+        const iframeDetector = new LightweightPopupDetector(this, 'iframe');
+        iframeDetector.setupIframeContext(iframeDocument, iframeWindow);
+        
+        // 设置用户交互触发器
+        iframeDetector.setupUserInteractionTriggers();
+        
+        // 暴露到iframe的全局对象
+        iframeWindow.lightweightPopupDetector = iframeDetector;
+        
+        // 立即执行一次检测
+        console.log('iframe初始化完成，立即执行弹窗检测');
+        setTimeout(() => {
+          iframeDetector.smartDetectPopupIframes();
+        }, 1000); // 给iframe一点时间完全加载
+        
+        console.log('iframe独立弹窗检测器初始化完成');
+      } else {
+        console.warn('LightweightPopupDetector不可用，无法在iframe中初始化');
+      }
+    } catch (error) {
+      console.error('为iframe初始化弹窗检测器失败:', error);
+    }
+  }
+
+  /**
+   * 为iframe内部设置弹窗检测功能（保留兼容性）
    * @param {Document} iframeDocument - iframe文档
    * @param {Window} iframeWindow - iframe窗口
    */
   setupIframePopupDetection(iframeDocument, iframeWindow) {
-    console.log('为iframe内部设置弹窗检测功能（复用轻量级弹窗检测器）');
-    
-    // 检查LightweightPopupDetector是否可用
-    if (typeof LightweightPopupDetector === 'undefined') {
-      console.warn('LightweightPopupDetector不可用，iframe内部弹窗检测功能将不可用');
-      return;
-    }
-    
-    // 创建iframe内部的轻量级弹窗检测器实例
-    const iframePopupDetector = new LightweightPopupDetector(this, 'iframe');
-    
-    // 设置iframe上下文
-    iframePopupDetector.setupIframeContext(iframeDocument, iframeWindow);
-    
-    // 设置用户交互触发器
-    iframePopupDetector.setupUserInteractionTriggers();
-    
-    // 存储检测器引用，便于后续使用
-    this.iframePopupDetector = iframePopupDetector;
-    
-    console.log('iframe内部弹窗检测功能设置完成（使用轻量级弹窗检测器）');
+    console.log('调用兼容性方法setupIframePopupDetection');
+    // 调用新的独立检测器方法
+    this.initIframePopupDetector(null, iframeDocument, iframeWindow);
   }
 
   /**

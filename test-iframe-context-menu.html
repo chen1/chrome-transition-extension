@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iframe右键菜单测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        
+        .section h2 {
+            color: #555;
+            margin-top: 0;
+        }
+        
+        .iframe-container {
+            margin: 15px 0;
+            padding: 10px;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            min-height: 200px;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 200px;
+            border: 1px solid #999;
+            border-radius: 3px;
+        }
+        
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        button.danger {
+            background-color: #f44336;
+        }
+        
+        button.danger:hover {
+            background-color: #da190b;
+        }
+        
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            border-radius: 4px;
+        }
+        
+        .log {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .nested-iframe {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>iframe右键菜单动态检测测试</h1>
+        
+        <div class="section">
+            <h2>控制面板</h2>
+            <div class="controls">
+                <button onclick="addIframe()">添加iframe</button>
+                <button onclick="addNestedIframe()">添加嵌套iframe</button>
+                <button onclick="removeLastIframe()" class="danger">移除最后一个iframe</button>
+                <button onclick="clearAllIframes()" class="danger">清空所有iframe</button>
+                <button onclick="showStatus()">显示状态</button>
+                <button onclick="clearLog()">清空日志</button>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>状态信息</h2>
+            <div id="status" class="status">
+                等待检测iframe...
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>iframe容器</h2>
+            <div id="iframeContainer" class="iframe-container">
+                <p>iframe将在这里显示</p>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>日志输出</h2>
+            <div id="log" class="log">
+                日志将在这里显示...<br>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let iframeCounter = 0;
+        let nestedIframeCounter = 0;
+        
+        // 重写console.log来显示在页面上
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        function addToLog(message, type = 'log') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'red' : type === 'warn' ? 'orange' : 'black';
+            logDiv.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span><br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToLog(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToLog(args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToLog(args.join(' '), 'warn');
+        };
+        
+        function addIframe() {
+            iframeCounter++;
+            const iframe = document.createElement('iframe');
+            iframe.id = `test-iframe-${iframeCounter}`;
+            iframe.src = 'data:text/html,<html><body style="font-family: Arial; padding: 20px;"><h3>测试iframe ' + iframeCounter + '</h3><p>这是一个测试iframe，请右键点击这里测试右键菜单功能。</p><button>测试按钮</button><span>测试文本</span></body></html>';
+            iframe.title = `测试iframe ${iframeCounter}`;
+            
+            const container = document.getElementById('iframeContainer');
+            container.appendChild(iframe);
+            
+            console.log(`添加了iframe: ${iframe.id}`);
+            updateStatus();
+        }
+        
+        function addNestedIframe() {
+            iframeCounter++;
+            nestedIframeCounter++;
+            const iframe = document.createElement('iframe');
+            iframe.id = `nested-iframe-${iframeCounter}`;
+            iframe.src = 'data:text/html,<html><body style="font-family: Arial; padding: 20px;"><h3>嵌套iframe ' + nestedIframeCounter + '</h3><p>这是一个嵌套的测试iframe。</p><iframe src="data:text/html,<html><body style=\'padding: 10px; background: #f0f0f0;\'><h4>深层嵌套iframe</h4><p>这是深层嵌套的iframe内容。</p><button>深层按钮</button></body></html>" style="width: 100%; height: 100px; border: 1px solid #ccc;"></iframe></body></html>';
+            iframe.title = `嵌套iframe ${nestedIframeCounter}`;
+            
+            const container = document.getElementById('iframeContainer');
+            container.appendChild(iframe);
+            
+            console.log(`添加了嵌套iframe: ${iframe.id}`);
+            updateStatus();
+        }
+        
+        function removeLastIframe() {
+            const container = document.getElementById('iframeContainer');
+            const iframes = container.querySelectorAll('iframe');
+            if (iframes.length > 0) {
+                const lastIframe = iframes[iframes.length - 1];
+                console.log(`移除iframe: ${lastIframe.id}`);
+                container.removeChild(lastIframe);
+                updateStatus();
+            } else {
+                console.log('没有iframe可以移除');
+            }
+        }
+        
+        function clearAllIframes() {
+            const container = document.getElementById('iframeContainer');
+            const iframes = container.querySelectorAll('iframe');
+            console.log(`清空所有iframe，共 ${iframes.length} 个`);
+            iframes.forEach(iframe => {
+                container.removeChild(iframe);
+            });
+            updateStatus();
+        }
+        
+        function showStatus() {
+            if (window.contextMenuTranslator && window.contextMenuTranslator.iframeContextMenuManager) {
+                const manager = window.contextMenuTranslator.iframeContextMenuManager;
+                manager.printStatus();
+            } else {
+                console.log('iframe右键菜单管理器未找到');
+            }
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '日志已清空...<br>';
+        }
+        
+        function updateStatus() {
+            const statusDiv = document.getElementById('status');
+            const iframes = document.querySelectorAll('iframe');
+            statusDiv.innerHTML = `
+                <strong>当前状态:</strong><br>
+                - 页面中iframe数量: ${iframes.length}<br>
+                - 测试iframe计数器: ${iframeCounter}<br>
+                - 嵌套iframe计数器: ${nestedIframeCounter}<br>
+                - 时间: ${new Date().toLocaleString()}
+            `;
+        }
+        
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('iframe右键菜单测试页面加载完成');
+            updateStatus();
+            
+            // 等待扩展加载
+            setTimeout(() => {
+                if (window.contextMenuTranslator) {
+                    console.log('右键菜单翻译器已加载');
+                    if (window.contextMenuTranslator.iframeContextMenuManager) {
+                        console.log('iframe右键菜单管理器已加载');
+                        window.contextMenuTranslator.iframeContextMenuManager.printStatus();
+                    }
+                } else {
+                    console.log('等待右键菜单翻译器加载...');
+                }
+            }, 2000);
+        });
+        
+        // 定期更新状态
+        setInterval(updateStatus, 5000);
+    </script>
+</body>
+</html>

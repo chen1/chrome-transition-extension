@@ -27,7 +27,7 @@ class LightweightPopupDetector {
       this.window = window;
     }
     
-    console.log(`轻量级弹窗检测器初始化完成 (${context})`);
+    // console.log(`轻量级弹窗检测器初始化完成 (${context})`);
   }
 
   /**
@@ -37,13 +37,13 @@ class LightweightPopupDetector {
    */
   setupIframeContext(iframeDocument, iframeWindow) {
     if (this.context !== 'iframe') {
-      console.warn('setupIframeContext只能在iframe上下文中调用');
+      // console.warn('setupIframeContext只能在iframe上下文中调用');
       return;
     }
     
     this.document = iframeDocument;
     this.window = iframeWindow;
-    console.log('iframe上下文设置完成:', iframeDocument.location?.href);
+    // console.log('iframe上下文设置完成:', iframeDocument.location?.href);
   }
 
   /**
@@ -55,14 +55,14 @@ class LightweightPopupDetector {
     
     // 防止频繁检测
     if (this.isDetecting || (now - this.lastDetectionTime) < this.minDetectionInterval) {
-      console.log('跳过检测：正在检测中或间隔太短');
+      // console.log('跳过检测：正在检测中或间隔太短');
       return;
     }
     
     this.isDetecting = true;
     this.lastDetectionTime = now;
     
-    console.log('开始轻量级弹窗iframe检测');
+    // console.log('开始轻量级弹窗iframe检测');
     
     // 使用requestIdleCallback在浏览器空闲时检测
     if (this.window.requestIdleCallback) {
@@ -84,7 +84,7 @@ class LightweightPopupDetector {
   performDetection() {
     try {
       const visiblePopups = this.findVisiblePopups();
-      console.log(`找到 ${visiblePopups.length} 个可见弹窗`);
+      // console.log(`找到 ${visiblePopups.length} 个可见弹窗`);
       
       let newIframesDetected = 0;
       
@@ -93,49 +93,53 @@ class LightweightPopupDetector {
         
         // 跳过已检测的弹窗
         if (this.detectionCache.has(cacheKey)) {
-          console.log('跳过已检测的弹窗:', cacheKey);
+          // console.log('跳过已检测的弹窗:', cacheKey);
           return;
         }
         
         // 检测弹窗内的iframe
         const iframes = popup.querySelectorAll('iframe');
-        console.log(`弹窗 ${cacheKey} 包含 ${iframes.length} 个iframe`);
+        // console.log(`弹窗 ${cacheKey} 包含 ${iframes.length} 个iframe`);
         
         iframes.forEach(iframe => {
-          if (!this.iframeHandler.boundIframes.has(iframe)) {
-            console.log('轻量级检测到新弹窗iframe:', {
-              src: iframe.src,
-              id: iframe.id,
-              className: iframe.className
-            });
+          const cache = this.iframeHandler.getCache();
+          if (!cache.hasIframe(iframe)) {
+            // console.log('轻量级检测到新弹窗iframe:', {
+            //   src: iframe.src,
+            //   id: iframe.id,
+            //   className: iframe.className
+            // });
             
             // 尝试绑定事件
             this.iframeHandler.tryBindIframeEvents(iframe, 0);
             newIframesDetected++;
           } else {
-            console.log('iframe已绑定，跳过:', iframe.src);
+            // console.log('iframe已绑定，跳过:', iframe.src);
           }
         });
         
         // 缓存检测结果
         this.detectionCache.set(cacheKey, Date.now());
-        console.log('弹窗检测结果已缓存:', cacheKey);
+        // console.log('弹窗检测结果已缓存:', cacheKey);
       });
       
       // 清理过期缓存
       this.cleanupCache();
       
-      console.log(`轻量级检测完成，新检测到 ${newIframesDetected} 个iframe`);
+      // 清理已移除的iframe缓存
+      this.cleanupRemovedIframes();
+      
+      // console.log(`轻量级检测完成，新检测到 ${newIframesDetected} 个iframe`);
       
     } catch (error) {
-      console.error('轻量级弹窗检测出错:', error);
+      // console.error('轻量级弹窗检测出错:', error);
       this.isDetecting = false;
     }
   }
 
   /**
-   * 查找可见的弹窗 - 高效版本
-   * 只检查当前可见的元素，避免不必要的DOM遍历
+   * 查找可见的弹窗 - 独立窗口版本
+   * 根据上下文只检测当前窗口的弹窗
    */
   findVisiblePopups() {
     const popupSelectors = [
@@ -164,70 +168,91 @@ class LightweightPopupDetector {
     const visiblePopups = [];
     let totalElementsFound = 0;
     
-    console.log('开始查找弹窗元素...');
+    // console.log(`开始${this.context}窗口弹窗检测...`);
     
-    // 只检查当前可见的元素
+    // 只检测当前窗口的弹窗
+    const currentPopups = this.findPopupsInCurrentWindow(popupSelectors);
+    visiblePopups.push(...currentPopups.elements);
+    totalElementsFound += currentPopups.totalFound;
+    
+    // console.log(`${this.context}窗口弹窗检测总结: 总共找到 ${totalElementsFound} 个元素，其中 ${visiblePopups.length} 个可见`);
+    
+    return visiblePopups;
+  }
+
+  /**
+   * 在当前窗口中查找弹窗
+   * @param {Array} popupSelectors - 弹窗选择器数组
+   * @returns {Object} - 包含elements和totalFound的对象
+   */
+  findPopupsInCurrentWindow(popupSelectors) {
+    const visiblePopups = [];
+    let totalElementsFound = 0;
+    
+    // console.log(`在${this.context}窗口中查找弹窗元素...`);
+    
     popupSelectors.forEach(selector => {
       try {
         const elements = this.document.querySelectorAll(selector);
         totalElementsFound += elements.length;
         
         if (elements.length > 0) {
-          console.log(`选择器 ${selector} 找到 ${elements.length} 个元素`);
+          // console.log(`${this.context}窗口 - 选择器 ${selector} 找到 ${elements.length} 个元素`);
         }
         
         elements.forEach((element, index) => {
           // 排除类名包含.blockUI.blockOverlay的元素
           if (element.className && element.className.includes('blockUI') && element.className.includes('blockOverlay')) {
-            console.log('✗ 排除blockUI.blockOverlay元素:', {
-              selector: selector,
-              tagName: element.tagName,
-              className: element.className,
-              id: element.id
-            });
+            // console.log(`✗ 排除blockUI.blockOverlay元素 (${this.context}):`, {
+            //   selector: selector,
+            //   tagName: element.tagName,
+            //   className: element.className,
+            //   id: element.id
+            // });
             return; // 跳过这个元素
           }
           
           const isVisible = this.isElementVisible(element);
           
-          console.log(`元素 ${index + 1} (${selector}):`, {
-            tagName: element.tagName,
-            className: element.className,
-            id: element.id,
-            isVisible: isVisible,
-            rect: element.getBoundingClientRect(),
-            style: {
-              display: window.getComputedStyle(element).display,
-              visibility: window.getComputedStyle(element).visibility,
-              opacity: window.getComputedStyle(element).opacity
-            }
-          });
+          // console.log(`${this.context}窗口 - 元素 ${index + 1} (${selector}):`, {
+          //   tagName: element.tagName,
+          //   className: element.className,
+          //   id: element.id,
+          //   isVisible: isVisible,
+          //   rect: element.getBoundingClientRect(),
+          //   style: {
+          //     display: this.window.getComputedStyle(element).display,
+          //     visibility: this.window.getComputedStyle(element).visibility,
+          //     opacity: this.window.getComputedStyle(element).opacity
+          //   }
+          // });
           
           if (isVisible) {
             visiblePopups.push(element);
-            console.log('✓ 发现可见弹窗:', {
-              selector: selector,
-              tagName: element.tagName,
-              className: element.className,
-              id: element.id
-            });
+            // console.log(`✓ 发现可见弹窗 (${this.context}):`, {
+            //   selector: selector,
+            //   tagName: element.tagName,
+            //   className: element.className,
+            //   id: element.id
+            // });
           } else {
-            console.log('✗ 元素不可见:', {
-              selector: selector,
-              tagName: element.tagName,
-              className: element.className,
-              id: element.id
-            });
+            // console.log(`✗ 元素不可见 (${this.context}):`, {
+            //   selector: selector,
+            //   tagName: element.tagName,
+            //   className: element.className,
+            //   id: element.id
+            // });
           }
         });
       } catch (error) {
-        console.warn('选择器查询失败:', selector, error);
+        // console.warn(`${this.context}窗口 - 选择器查询失败:`, selector, error);
       }
     });
     
-    console.log(`弹窗检测总结: 总共找到 ${totalElementsFound} 个元素，其中 ${visiblePopups.length} 个可见`);
-    
-    return visiblePopups;
+    return {
+      elements: visiblePopups,
+      totalFound: totalElementsFound
+    };
   }
 
   /**
@@ -236,7 +261,7 @@ class LightweightPopupDetector {
    */
   isElementVisible(element) {
     if (!element || !element.getBoundingClientRect) {
-      console.log('元素可见性检查失败: 元素无效或缺少getBoundingClientRect方法');
+      // console.log('元素可见性检查失败: 元素无效或缺少getBoundingClientRect方法');
       return false;
     }
     
@@ -265,29 +290,29 @@ class LightweightPopupDetector {
           .filter(([key, value]) => !value)
           .map(([key]) => key);
         
-        console.log('元素可见性检查失败:', {
-          element: {
-            tagName: element.tagName,
-            className: element.className,
-            id: element.id
-          },
-          rect: rect,
-          style: {
-            display: style.display,
-            visibility: style.visibility,
-            opacity: style.opacity
-          },
-          failedChecks: failedChecks,
-          windowSize: {
-            innerWidth: this.window.innerWidth,
-            innerHeight: this.window.innerHeight
-          }
-        });
+        // console.log('元素可见性检查失败:', {
+        //   element: {
+        //     tagName: element.tagName,
+        //     className: element.className,
+        //     id: element.id
+        //   },
+        //   rect: rect,
+        //   style: {
+        //     display: style.display,
+        //     visibility: style.visibility,
+        //     opacity: style.opacity
+        //   },
+        //   failedChecks: failedChecks,
+        //   windowSize: {
+        //     innerWidth: this.window.innerWidth,
+        //     innerHeight: this.window.innerHeight
+        //   }
+        // });
       }
       
       return isVisible;
     } catch (error) {
-      console.warn('元素可见性检查失败:', error);
+      // console.warn('元素可见性检查失败:', error);
       return false;
     }
   }
@@ -310,7 +335,7 @@ class LightweightPopupDetector {
   cleanupCache() {
     // WeakMap会自动处理垃圾回收，无需手动清理
     // 当DOM元素被移除时，WeakMap中的对应条目会自动清理
-    console.log('WeakMap缓存会自动清理，无需手动操作');
+    // console.log('WeakMap缓存会自动清理，无需手动操作');
   }
 
   /**
@@ -318,7 +343,7 @@ class LightweightPopupDetector {
    * 只在用户交互时检测，避免持续监听
    */
   setupUserInteractionTriggers() {
-    console.log('设置用户交互触发器');
+    // console.log('设置用户交互触发器');
     
     // 监听用户交互事件
     const triggerEvents = ['click', 'dblclick', 'keydown', 'scroll', 'resize', 'focus'];
@@ -332,14 +357,14 @@ class LightweightPopupDetector {
         }
         
         triggerTimeout = setTimeout(() => {
-          console.log(`${this.context}用户交互触发检测: ${eventType}`);
+          // console.log(`${this.context}用户交互触发检测: ${eventType}`);
           this.smartDetectPopupIframes();
           triggerTimeout = null;
         }, 500);
       }, { passive: true });
     });
     
-    console.log('用户交互触发器设置完成');
+    // console.log('用户交互触发器设置完成');
   }
 
   /**
@@ -347,7 +372,7 @@ class LightweightPopupDetector {
    * 用于调试或特殊情况
    */
   forceDetect() {
-    console.log('强制触发弹窗检测');
+    // console.log('强制触发弹窗检测');
     this.lastDetectionTime = 0; // 重置时间限制
     this.smartDetectPopupIframes();
   }
@@ -371,14 +396,29 @@ class LightweightPopupDetector {
    * 在页面卸载时调用
    */
   cleanup() {
-    console.log('清理轻量级弹窗检测器资源');
+    // console.log('清理轻量级弹窗检测器资源');
     
     // WeakMap不需要手动清理，会自动垃圾回收
     this.detectionCache = new WeakMap(); // 重新初始化
     this.isDetecting = false;
     this.lastDetectionTime = 0;
     
-    console.log('轻量级弹窗检测器资源清理完成');
+    // console.log('轻量级弹窗检测器资源清理完成');
+  }
+
+  /**
+   * 清理已移除弹窗的iframe缓存
+   * 使用缓存管理器的清理功能
+   */
+  cleanupRemovedIframes() {
+    if (!this.iframeHandler) return;
+    
+    // console.log('轻量级检测器开始清理已移除的iframe缓存');
+    
+    // 使用缓存管理器的清理方法
+    const cache = this.iframeHandler.getCache();
+    const cleanedCount = cache.cleanupRemovedIframes(this.document);
+    // console.log(`轻量级检测器缓存管理器清理完成，移除了 ${cleanedCount} 个iframe`);
   }
 
   /**

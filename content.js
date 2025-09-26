@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-09-25 16:55:21
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-26 11:09:10
+ * @LastEditTime: 2025-09-26 13:59:35
  * @FilePath: /transition-extension/content.js
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -55,6 +55,9 @@ class TranslationTooltip {
       
       // 通知后台脚本内容脚本已加载
       this.notifyBackgroundScript();
+      
+      // 启动定期清理机制
+      this.startPeriodicCleanup();
     } catch (error) {
       // console.error('翻译工具提示初始化失败:', error);
     }
@@ -374,98 +377,38 @@ class TranslationTooltip {
   /**
    * 设置DOM变化监听器，动态检测新添加的iframe
    * 增强版：专门处理弹窗等异步场景
+   * 使用共享的DOM监听器模块
    */
   setupDOMObserver() {
     // console.log('=== 设置增强DOM变化监听器 ===');
     
-    const observer = new MutationObserver((mutations) => {
-      let hasNewIframe = false;
-      let hasPopupChange = false;
-      let hasVisibilityChange = false;
-      
-      mutations.forEach((mutation) => {
-        // 检查新增的节点
-        mutation.addedNodes.forEach((node) => {
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            // 检查新增的节点是否是iframe
-            if (node.tagName === 'IFRAME') {
-              console.log('检测到新添加的iframe:', {
-                id: node.id,
-                src: node.src,
-                className: node.className,
-                parentElement: node.parentElement?.tagName
-              });
-              hasNewIframe = true;
-            }
-            
-            // 检查新增的节点内部是否包含iframe
-            const iframes = node.querySelectorAll && node.querySelectorAll('iframe');
-            if (iframes && iframes.length > 0) {
-              console.log(`检测到包含 ${iframes.length} 个iframe的新节点`);
-              hasNewIframe = true;
-            }
-            
-            // 检测弹窗相关的变化
-            if (this.isPopupElement(node)) {
-              console.log('检测到弹窗元素:', {
-                tagName: node.tagName,
-                className: node.className,
-                id: node.id,
-                hasIframe: node.querySelectorAll('iframe').length > 0
-              });
-              hasPopupChange = true;
-            }
-          }
-        });
-        
-        // 检查属性变化（特别是弹窗的显示/隐藏）
-        if (mutation.type === 'attributes') {
-          const target = mutation.target;
-          if (this.isPopupElement(target)) {
-            const attributeName = mutation.attributeName;
-            if (['style', 'class', 'hidden', 'aria-hidden'].includes(attributeName)) {
-              console.log('检测到弹窗属性变化:', {
-                element: target.tagName,
-                attribute: attributeName,
-                newValue: target.getAttribute(attributeName),
-                hasIframe: target.querySelectorAll('iframe').length > 0
-              });
-              hasVisibilityChange = true;
-            }
-          }
-        }
-      });
-      
-      // 处理检测到的变化
-      if (hasNewIframe && this.iframeHandler) {
+    // 创建共享DOM监听器
+    this.sharedDOMObserver = new SharedDOMObserver({
+      context: 'main',
+      debug: true,
+      onNewIframe: (newIframes, observerId) => {
         console.log('检测到新iframe，延迟绑定事件');
         this.scheduleIframeDetection('new-iframe');
-      }
-      
-      if (hasPopupChange && this.iframeHandler) {
+      },
+      onPopupChange: (popupChanges, observerId) => {
         console.log('检测到弹窗变化，延迟检测iframe');
         this.scheduleIframeDetection('popup-change');
-      }
-      
-      if (hasVisibilityChange && this.iframeHandler) {
+      },
+      onVisibilityChange: (popupChanges, observerId) => {
         console.log('检测到弹窗可见性变化，延迟检测iframe');
         this.scheduleIframeDetection('visibility-change');
+      },
+      onRemovedPopup: (removedIframes, observerId) => {
+        console.log('检测到弹窗移除，清理相关缓存');
+        // 弹窗移除时立即清理，不需要延迟
+        this.cleanupRemovedPopupCache();
       }
     });
-    
-    // 开始观察DOM变化，增加更详细的配置
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['style', 'class', 'hidden', 'aria-hidden', 'src'],
-      attributeOldValue: true
-    });
+
+    // 创建并启动监听器
+    this.domObserver = this.sharedDOMObserver.createObserver(document.body, 'main-observer');
     
     // console.log('增强DOM变化监听器设置完成');
-    
-    // 存储observer引用，用于清理
-    this.domObserver = observer;
     
     // 轻量级弹窗检测机制已通过initLightweightPopupDetector设置
   }
@@ -486,17 +429,165 @@ class TranslationTooltip {
     if (reason === 'visibility-change') delay = 200;
     
     this._iframeDetectionTimeout = setTimeout(() => {
-      // 优先使用轻量级检测器
-      if (this.lightweightPopupDetector) {
-        console.log(`使用轻量级检测器处理: ${reason}`);
+      // 智能混合检测策略：避免重复检测
+      if (this.lightweightPopupDetector && this.iframeHandler) {
+        console.log(`使用智能混合检测策略: ${reason}`);
+        this.smartHybridIframeDetection();
+      } else if (this.lightweightPopupDetector) {
+        console.log(`使用轻量级检测器处理弹窗: ${reason}`);
         this.lightweightPopupDetector.smartDetectPopupIframes();
       } else if (this.iframeHandler) {
-        // 降级到原有方法
-        console.log(`降级到原有检测方法: ${reason}`);
+        console.log(`使用原有方法检测所有iframe: ${reason}`);
         this.iframeHandler.detectAndBindAllIframes();
       }
+      
       this._iframeDetectionTimeout = null;
     }, delay);
+  }
+
+  /**
+   * 智能混合iframe检测策略
+   * 避免重复检测，分别处理弹窗内和页面中的iframe
+   */
+  smartHybridIframeDetection() {
+    console.log('=== 开始智能混合iframe检测 ===');
+    
+    // 1. 首先使用轻量级检测器处理弹窗内的iframe
+    console.log('步骤1: 检测弹窗内iframe');
+    this.lightweightPopupDetector.smartDetectPopupIframes();
+    
+    // 2. 然后检测页面中非弹窗区域的iframe
+    console.log('步骤2: 检测非弹窗区域iframe');
+    this.detectNonPopupIframes();
+    
+    console.log('=== 智能混合iframe检测完成 ===');
+  }
+
+  /**
+   * 检测非弹窗区域的iframe
+   * 只处理不在弹窗内的iframe，避免重复检测
+   */
+  detectNonPopupIframes() {
+    const allIframes = document.querySelectorAll('iframe');
+    console.log(`页面中总共找到 ${allIframes.length} 个iframe`);
+    
+    let nonPopupIframes = 0;
+    let alreadyBoundIframes = 0;
+    
+    allIframes.forEach((iframe, index) => {
+      // 检查是否已经绑定过
+      const cache = this.iframeHandler.getCache();
+      if (cache.hasIframe(iframe)) {
+        alreadyBoundIframes++;
+        console.log(`iframe ${index + 1} 已绑定，跳过:`, iframe.src);
+        return;
+      }
+      
+      // 检查是否在弹窗内
+      if (this.isIframeInPopup(iframe)) {
+        console.log(`iframe ${index + 1} 在弹窗内，跳过:`, iframe.src);
+        return;
+      }
+      
+      // 处理非弹窗区域的iframe
+      console.log(`检测非弹窗区域iframe ${index + 1}:`, {
+        src: iframe.src,
+        id: iframe.id,
+        className: iframe.className
+      });
+      
+      // 为iframe添加src变化监听器
+      this.iframeHandler.addIframeSrcChangeListener(iframe);
+      
+      // 尝试绑定事件
+      this.iframeHandler.tryBindIframeEvents(iframe, 0);
+      nonPopupIframes++;
+    });
+    
+    console.log(`非弹窗区域iframe检测完成: 新检测 ${nonPopupIframes} 个，已绑定 ${alreadyBoundIframes} 个`);
+  }
+
+  /**
+   * 检查iframe是否在弹窗内
+   * @param {Element} iframe - iframe元素
+   * @returns {boolean} - 是否在弹窗内
+   */
+  isIframeInPopup(iframe) {
+    // 获取弹窗选择器（与轻量级检测器保持一致）
+    const popupSelectors = [
+      '[role="dialog"]',
+      '[role="modal"]', 
+      '[role="alertdialog"]',
+      '.modal',
+      '.popup',
+      '.dialog',
+      '.overlay',
+      '.lightbox',
+      '[data-modal]',
+      '[data-popup]',
+      '[data-dialog]',
+      '.modal-dialog',
+      '.popup-container',
+      '.dialog-container',
+      '.blockUI',
+      '.blockMsg',
+      '.blockPage',
+      '[class*="blockUI"]',
+      '[class*="blockMsg"]',
+      '[class*="blockPage"]'
+    ];
+    
+    // 检查iframe的父元素链中是否有弹窗元素
+    let currentElement = iframe.parentElement;
+    while (currentElement && currentElement !== document.body) {
+      // 检查当前元素是否为弹窗
+      for (const selector of popupSelectors) {
+        if (currentElement.matches && currentElement.matches(selector)) {
+          // 排除blockUI.blockOverlay元素
+          if (currentElement.className && 
+              currentElement.className.includes('blockUI') && 
+              currentElement.className.includes('blockOverlay')) {
+            continue;
+          }
+          
+          // 检查弹窗是否可见
+          if (this.isElementVisible(currentElement)) {
+            return true;
+          }
+        }
+      }
+      currentElement = currentElement.parentElement;
+    }
+    
+    return false;
+  }
+
+  /**
+   * 检查元素是否可见
+   * @param {Element} element - 要检查的元素
+   * @returns {boolean} - 是否可见
+   */
+  isElementVisible(element) {
+    if (!element || !element.getBoundingClientRect) {
+      return false;
+    }
+    
+    try {
+      const rect = element.getBoundingClientRect();
+      const style = window.getComputedStyle(element);
+      
+      return rect.width > 0 && 
+             rect.height > 0 && 
+             style.display !== 'none' && 
+             style.visibility !== 'hidden' && 
+             style.opacity !== '0' &&
+             rect.top < window.innerHeight &&
+             rect.bottom > 0 &&
+             rect.left < window.innerWidth &&
+             rect.right > 0;
+    } catch (error) {
+      return false;
+    }
   }
 
   /**
@@ -533,6 +624,88 @@ class TranslationTooltip {
     if (dataModal || dataPopup) return true;
     
     return false;
+  }
+
+  /**
+   * 清理被移除弹窗内的iframe缓存
+   * 使用iframe缓存管理器的弹窗清理功能
+   * @param {Element} removedPopup - 被移除的弹窗元素
+   */
+  cleanupIframesInRemovedPopup(removedPopup) {
+    if (!this.iframeHandler || !removedPopup) return;
+    
+    console.log('开始清理被移除弹窗内的iframe缓存:', {
+      tagName: removedPopup.tagName,
+      className: removedPopup.className,
+      id: removedPopup.id
+    });
+    
+    // 使用缓存管理器的弹窗清理方法
+    const cache = this.iframeHandler.getCache();
+    const cleanedCount = cache.cleanupIframesInPopup(removedPopup);
+    console.log(`缓存管理器弹窗清理完成，移除了 ${cleanedCount} 个iframe`);
+  }
+
+  /**
+   * 清理单个iframe的缓存
+   * @param {Element} iframe - iframe元素
+   */
+  cleanupIframeCache(iframe) {
+    if (!this.iframeHandler || !iframe) return;
+    
+    const cache = this.iframeHandler.getCache();
+    const isInCache = cache.hasIframe(iframe);
+    
+    console.log('清理iframe缓存:', {
+      src: iframe.src,
+      id: iframe.id,
+      isInCache: isInCache
+    });
+    
+    // 如果iframe在缓存中，清理它
+    if (isInCache) {
+      console.log('从缓存中移除iframe');
+      this.iframeHandler.cleanupIframeEvents(iframe);
+    }
+  }
+
+  /**
+   * 清理被移除弹窗的缓存
+   * 使用iframe缓存管理器的清理功能
+   */
+  cleanupRemovedPopupCache() {
+    if (!this.iframeHandler) return;
+    
+    console.log('开始清理被移除弹窗的缓存');
+    
+    // 使用缓存管理器的清理方法
+    const cache = this.iframeHandler.getCache();
+    const cleanedCount = cache.cleanupRemovedIframes();
+    console.log(`缓存管理器清理完成，移除了 ${cleanedCount} 个iframe`);
+  }
+
+  /**
+   * 启动定期清理机制
+   * 使用iframe缓存管理器的定期清理功能
+   */
+  startPeriodicCleanup() {
+    console.log('启动定期清理机制');
+    
+    // 使用缓存管理器的定期清理机制
+    const cache = this.iframeHandler.getCache();
+    cache.startPeriodicCleanup();
+    console.log('使用iframe缓存管理器的定期清理机制');
+  }
+
+  /**
+   * 停止定期清理机制
+   * 使用iframe缓存管理器的停止清理功能
+   */
+  stopPeriodicCleanup() {
+    // 使用缓存管理器的停止清理机制
+    const cache = this.iframeHandler.getCache();
+    cache.stopPeriodicCleanup();
+    console.log('使用iframe缓存管理器的停止清理机制');
   }
 
   handleMouseOver(event) {
