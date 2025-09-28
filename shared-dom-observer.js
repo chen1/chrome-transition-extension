@@ -40,7 +40,7 @@ class SharedDOMObserver {
    */
   createObserver(targetElement, observerId = 'default') {
     if (this.observers.has(observerId)) {
-      console.warn(`Observer ${observerId} 已存在，先断开旧连接`);
+      // console.warn(`Observer ${observerId} 已存在，先断开旧连接`);
       this.disconnectObserver(observerId);
     }
 
@@ -52,10 +52,10 @@ class SharedDOMObserver {
     observer.observe(targetElement, this.options.observeConfig);
     this.observers.set(observerId, observer);
 
-    this.log(`DOM监听器 ${observerId} 已创建并启动`, {
-      target: targetElement.tagName,
-      config: this.options.observeConfig
-    });
+    // this.log(`DOM监听器 ${observerId} 已创建并启动`, {
+    //   target: targetElement.tagName,
+    //   config: this.options.observeConfig
+    // });
 
     return observer;
   }
@@ -68,7 +68,7 @@ class SharedDOMObserver {
   handleMutations(mutations, observerId) {
     const changes = this.analyzeMutations(mutations);
     
-    this.log(`DOM变化分析完成 (${observerId}):`, changes);
+    // this.log(`DOM变化分析完成 (${observerId}):`, changes);
 
     // 处理各种变化类型
     this.processChanges(changes, observerId);
@@ -129,12 +129,12 @@ class SharedDOMObserver {
   analyzeAddedNode(node, changes) {
     // 检查新增的节点是否是iframe
     if (node.tagName === 'IFRAME') {
-      this.log('检测到新添加的iframe:', {
-        id: node.id,
-        src: node.src,
-        className: node.className,
-        parentElement: node.parentElement?.tagName
-      });
+      // this.log('检测到新添加的iframe:', {
+      //   id: node.id,
+      //   src: node.src,
+      //   className: node.className,
+      //   parentElement: node.parentElement?.tagName
+      // });
       changes.hasNewIframe = true;
       changes.newIframes.push(node);
     }
@@ -142,19 +142,19 @@ class SharedDOMObserver {
     // 检查新增的节点内部是否包含iframe
     const iframes = node.querySelectorAll && node.querySelectorAll('iframe');
     if (iframes && iframes.length > 0) {
-      this.log(`检测到包含 ${iframes.length} 个iframe的新节点`);
+      // this.log(`检测到包含 ${iframes.length} 个iframe的新节点`);
       changes.hasNewIframe = true;
       changes.newIframes.push(...Array.from(iframes));
     }
 
     // 检测弹窗相关的变化
     if (this.isPopupElement(node)) {
-      this.log('检测到弹窗元素:', {
-        tagName: node.tagName,
-        className: node.className,
-        id: node.id,
-        hasIframe: node.querySelectorAll('iframe').length > 0
-      });
+      // this.log('检测到弹窗元素:', {
+      //   tagName: node.tagName,
+      //   className: node.className,
+      //   id: node.id,
+      //   hasIframe: node.querySelectorAll('iframe').length > 0
+      // });
       changes.hasPopupChange = true;
       changes.popupChanges.push({ type: 'added', element: node });
     }
@@ -177,12 +177,12 @@ class SharedDOMObserver {
   analyzeRemovedNode(node, changes) {
     // 检查移除的节点是否是弹窗元素
     if (this.isPopupElement(node)) {
-      this.log('检测到弹窗元素被移除:', {
-        tagName: node.tagName,
-        className: node.className,
-        id: node.id,
-        hasIframe: node.querySelectorAll('iframe').length > 0
-      });
+      // this.log('检测到弹窗元素被移除:', {
+      //   tagName: node.tagName,
+      //   className: node.className,
+      //   id: node.id,
+      //   hasIframe: node.querySelectorAll('iframe').length > 0
+      // });
       changes.hasRemovedPopup = true;
       changes.popupChanges.push({ type: 'removed', element: node });
     }
@@ -190,7 +190,7 @@ class SharedDOMObserver {
     // 检查移除的节点内部是否包含iframe
     const iframes = node.querySelectorAll && node.querySelectorAll('iframe');
     if (iframes && iframes.length > 0) {
-      this.log(`检测到包含 ${iframes.length} 个iframe的节点被移除`);
+      // this.log(`检测到包含 ${iframes.length} 个iframe的节点被移除`);
       changes.hasRemovedPopup = true;
       changes.removedIframes.push(...Array.from(iframes));
     }
@@ -209,7 +209,7 @@ class SharedDOMObserver {
     if (target.tagName === 'IFRAME' && attributeName === 'src') {
       const oldSrc = mutation.oldValue || 'unknown';
       const newSrc = target.src;
-      this.log('检测到iframe src变化:', oldSrc, '->', newSrc);
+      // this.log('检测到iframe src变化:', oldSrc, '->', newSrc);
       changes.hasIframeSrcChange = true;
       changes.srcChanges.push({
         iframe: target,
@@ -221,12 +221,12 @@ class SharedDOMObserver {
     // 检查弹窗的显示/隐藏属性变化
     if (this.isPopupElement(target)) {
       if (['style', 'class', 'hidden', 'aria-hidden'].includes(attributeName)) {
-        this.log('检测到弹窗属性变化:', {
-          element: target.tagName,
-          attribute: attributeName,
-          newValue: target.getAttribute(attributeName),
-          hasIframe: target.querySelectorAll('iframe').length > 0
-        });
+        // this.log('检测到弹窗属性变化:', {
+        //   element: target.tagName,
+        //   attribute: attributeName,
+        //   newValue: target.getAttribute(attributeName),
+        //   hasIframe: target.querySelectorAll('iframe').length > 0
+        // });
         changes.hasVisibilityChange = true;
         changes.popupChanges.push({ 
           type: 'attribute', 
@@ -351,7 +351,7 @@ class SharedDOMObserver {
     if (observer) {
       observer.disconnect();
       this.observers.delete(observerId);
-      this.log(`DOM监听器 ${observerId} 已断开`);
+      // this.log(`DOM监听器 ${observerId} 已断开`);
     }
   }
 
@@ -361,7 +361,7 @@ class SharedDOMObserver {
   disconnectAll() {
     this.observers.forEach((observer, observerId) => {
       observer.disconnect();
-      this.log(`DOM监听器 ${observerId} 已断开`);
+      // this.log(`DOM监听器 ${observerId} 已断开`);
     });
     this.observers.clear();
 
@@ -393,7 +393,7 @@ class SharedDOMObserver {
    */
   log(message, data = null) {
     if (this.options.debug) {
-      console.log(`[SharedDOMObserver:${this.options.context}] ${message}`, data);
+      // console.log(`[SharedDOMObserver:${this.options.context}] ${message}`, data);
     }
   }
 }

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>悬浮球翻译功能修复测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        iframe {
+            width: 100%;
+            height: 200px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>悬浮球翻译功能修复测试</h1>
+    
+    <div class="test-section">
+        <h2>测试说明</h2>
+        <p>此页面用于测试悬浮球翻译功能的修复效果。请按照以下步骤进行测试：</p>
+        <ol>
+            <li>页面加载后，应该能看到右下角的悬浮球</li>
+            <li>点击悬浮球或鼠标悬停应该能看到菜单</li>
+            <li>点击"开启翻译"按钮</li>
+            <li>检查控制台是否还有报错信息</li>
+            <li>鼠标悬停在下面的按钮上测试翻译功能</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>状态检查</h2>
+        <div id="status-container">
+            <div class="status info">正在检查状态...</div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>翻译测试按钮</h2>
+        <button class="test-button">Hello World</button>
+        <button class="test-button">Submit</button>
+        <button class="test-button">Cancel</button>
+        <button class="test-button">Save</button>
+        <button class="test-button">Delete</button>
+        <button class="test-button">Login</button>
+        <button class="test-button">Register</button>
+        <button class="test-button">Welcome</button>
+    </div>
+
+    <div class="test-section">
+        <h2>iframe测试</h2>
+        <p>下面的iframe用于测试嵌套iframe的翻译功能：</p>
+        <iframe src="data:text/html,
+            <html>
+                <head><title>iframe测试</title></head>
+                <body style='padding: 20px; font-family: Arial;'>
+                    <h3>iframe内容测试</h3>
+                    <button style='background: #28a745; color: white; border: none; padding: 10px; margin: 5px; border-radius: 4px;'>Click Me</button>
+                    <button style='background: #dc3545; color: white; border: none; padding: 10px; margin: 5px; border-radius: 4px;'>Delete Item</button>
+                    <span style='display: block; margin: 10px 0;'>This is a test text</span>
+                </body>
+            </html>
+        "></iframe>
+    </div>
+
+    <script>
+        // 状态检查脚本
+        function checkStatus() {
+            const statusContainer = document.getElementById('status-container');
+            const checks = [];
+            
+            // 检查悬浮球是否存在
+            const floatingBall = document.getElementById('translation-floating-ball');
+            if (floatingBall) {
+                checks.push({
+                    name: '悬浮球元素',
+                    status: 'success',
+                    message: '悬浮球已创建'
+                });
+            } else {
+                checks.push({
+                    name: '悬浮球元素',
+                    status: 'error',
+                    message: '悬浮球未找到'
+                });
+            }
+            
+            // 检查翻译工具实例
+            if (window.translationTooltip) {
+                checks.push({
+                    name: '翻译工具实例',
+                    status: 'success',
+                    message: 'TranslationTooltip实例存在'
+                });
+                
+                // 检查iframeHandler
+                if (window.translationTooltip.iframeHandler) {
+                    checks.push({
+                        name: 'iframe处理器',
+                        status: 'success',
+                        message: 'iframeHandler已初始化'
+                    });
+                } else {
+                    checks.push({
+                        name: 'iframe处理器',
+                        status: 'error',
+                        message: 'iframeHandler未初始化'
+                    });
+                }
+            } else {
+                checks.push({
+                    name: '翻译工具实例',
+                    status: 'error',
+                    message: 'TranslationTooltip实例不存在'
+                });
+            }
+            
+            // 检查悬浮球翻译器
+            if (window.floatingBallTranslator) {
+                checks.push({
+                    name: '悬浮球翻译器',
+                    status: 'success',
+                    message: 'FloatingBallTranslator实例存在'
+                });
+            } else {
+                checks.push({
+                    name: '悬浮球翻译器',
+                    status: 'error',
+                    message: 'FloatingBallTranslator实例不存在'
+                });
+            }
+            
+            // 更新状态显示
+            statusContainer.innerHTML = checks.map(check => 
+                `<div class="status ${check.status}">
+                    <strong>${check.name}:</strong> ${check.message}
+                </div>`
+            ).join('');
+        }
+        
+        // 页面加载完成后检查状态
+        document.addEventListener('DOMContentLoaded', () => {
+            // 延迟检查，给脚本时间初始化
+            setTimeout(checkStatus, 2000);
+            
+            // 定期检查状态
+            setInterval(checkStatus, 5000);
+        });
+        
+        // 监听控制台错误
+        window.addEventListener('error', (event) => {
+            console.error('页面错误:', event.error);
+            const statusContainer = document.getElementById('status-container');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'status error';
+            errorDiv.innerHTML = `<strong>错误:</strong> ${event.error.message}`;
+            statusContainer.appendChild(errorDiv);
+        });
+    </script>
+</body>
+</html>

@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-09-25 16:55:21
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-26 17:35:14
+ * @LastEditTime: 2025-09-28 17:03:55
  * @FilePath: /transition-extension/iframe-handler.js
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -230,10 +230,6 @@ class IframeHandler {
         return;
       }
       
-      // 标记已绑定
-      cache.addIframe(iframeElement, iframeElement.ownerDocument);
-      console.log('iframe缓存状态:', cache.getStats());
-      
       // 为iframe创建独立的弹窗检测器
       this.initIframePopupDetector(iframeElement, iframeDocument, iframeWindow);
       
@@ -248,7 +244,7 @@ class IframeHandler {
         // console.log('元素类名:', event.target.className);
         // console.log('事件类型:', event.type);
         // console.log('事件时间戳:', event.timeStamp);
-        // // console.log('iframe元素:', iframeElement);
+        // console.log('iframe元素:', iframeElement);
         // console.log('translationTooltip存在:', !!this.translationTooltip);
         
         // 清除隐藏定时器，防止tooltip被意外隐藏
@@ -256,6 +252,22 @@ class IframeHandler {
           clearTimeout(this.translationTooltip.hideTimeout);
           this.translationTooltip.hideTimeout = null;
         }
+        // 检查当前鼠标悬浮的元素是否为iframe元素
+        // if (this.isIframe(event.target)) {
+        //     // console.log('检测到iframe内嵌套的iframe元素，递归处理');
+        //     // 对于iframe内的嵌套iframe，需要特殊处理
+        //     try {
+        //       const nestedIframeWindow = event.target.contentWindow;
+        //       const nestedIframeDocument = event.target.contentDocument;
+        //       if (nestedIframeWindow && nestedIframeDocument) {
+        //         // 递归绑定嵌套iframe的事件
+        //         this.bindIframeEvents(event.target, nestedIframeDocument, nestedIframeWindow);
+        //       }
+        //     } catch (error) {
+        //       // console.log('嵌套iframe访问失败，可能是跨域限制');
+        //     }
+        //     return; // 对于iframe元素，不继续处理文本翻译
+        // }
         
         try {
           // 动态重置iframe内元素的pointer-events样式
@@ -295,15 +307,8 @@ class IframeHandler {
             return;
           }
           
-          // 计算iframe内元素在主窗口中的位置
-          const iframeRect = iframeElement.getBoundingClientRect();
-          const elementRect = event.target.getBoundingClientRect();
-          
-          // 创建模拟事件对象，用于定位tooltip
-          const simulatedEvent = {
-            clientX: iframeRect.left + elementRect.left + elementRect.width / 2,
-            clientY: iframeRect.top + elementRect.top + elementRect.height / 2
-          };
+          // 计算iframe内元素在主窗口中的位置（支持多层嵌套）
+          const simulatedEvent = this.calculateNestedIframePosition(event.target, iframeElement);
           
           // console.log('iframe内元素位置:', {
 //             iframeRect: iframeRect,
@@ -337,7 +342,7 @@ class IframeHandler {
       
       // 绑定事件到iframe文档的document和body
       const iframeUrl = iframeDocument.location ? iframeDocument.location.href : 'unknown';
-    //   console.log('开始绑定iframe事件监听器...:', iframeUrl);
+      console.log('开始绑定iframe事件监听器...:', iframeElement.src, iframeUrl);
       
       // 只绑定到document，避免重复绑定导致的事件冲突
       iframeDocument.addEventListener('mouseover', iframeMouseOverHandler, true);
@@ -346,31 +351,12 @@ class IframeHandler {
       // 为iframe内部添加弹窗检测功能
       this.setupIframePopupDetection(iframeDocument, iframeWindow);
       
-      console.log('iframe document事件监听器绑定成功: ', iframeDocument.location&&iframeDocument.location.href);
-      
       // console.log('iframe可交互元素事件监听器绑定完成');
       
       // 测试事件绑定是否成功
       // console.log('测试iframe事件绑定...');
       const testElements = iframeDocument.querySelectorAll('button, span, div');
       // console.log(`iframe中找到 ${testElements.length} 个测试元素`);
-      
-      if (testElements.length > 0) {
-        const firstElement = testElements[0];
-        // console.log('第一个测试元素:', {
-//           tagName: firstElement.tagName,
-//           textContent: firstElement.textContent?.trim(),
-//           className: firstElement.className,
-//           id: firstElement.id
-
-// });
-        
-        // 测试事件监听器是否真的绑定了
-        const hasListeners = iframeDocument.addEventListener ? true : false;
-        // console.log('iframe事件监听器状态:', hasListeners);
-      } else {
-        // console.log('iframe中未找到任何可测试元素');
-      }
       
       // 监听iframe内容变化，重新绑定事件
       // 使用共享的DOM监听器模块
@@ -393,8 +379,8 @@ class IframeHandler {
               className: iframe.className,
               parentElement: iframe.parentElement?.tagName
             });
-            // 尝试绑定新iframe的事件
-            this.tryBindIframeEvents(iframe, 0);
+            // 递归检测并绑定嵌套iframe事件，支持一层层往里嵌套
+            this.detectAndBindNestedIframes(iframe, 1);
           });
         },
         onSignificantChange: (observerId) => {
@@ -411,7 +397,7 @@ class IframeHandler {
           
           // 重新绑定
           setTimeout(() => {
-            console.log('iframe document事件监听器重新绑定成功: ', iframeDocument.location&&iframeDocument.location.href);
+            console.log('iframe document事件监听器重新绑定成功: ', iframeElement.src, iframeDocument.location&&iframeDocument.location.href);
             iframeDocument.addEventListener('mouseover', iframeMouseOverHandler, true);
             iframeDocument.addEventListener('mouseout', iframeMouseOutHandler, true);
             // console.log('iframe事件重新绑定完成');
@@ -426,7 +412,12 @@ class IframeHandler {
       iframeElement._translationObserver = observer;
       iframeElement._sharedDOMObserver = iframeSharedObserver;
       
-      console.log('iframe事件绑定完成，等待内部元素事件');
+      console.log('iframe事件绑定完成，等待内部元素事件：', iframeElement.src, iframeDocument.location&&iframeDocument.location.href);
+            
+      // 事件绑定成功后，标记已绑定到缓存
+      cache.addIframe(iframeElement, iframeElement.ownerDocument);
+      console.log('iframe缓存状态:', cache.getStats());
+      
       
     } catch (error) {
       // console.error('绑定iframe事件时出错:', error);
@@ -685,15 +676,8 @@ class IframeHandler {
         return;
       }
 
-      // 计算iframe内元素在主窗口中的位置
-      const iframeRect = iframeElement.getBoundingClientRect();
-      const elementRect = element.getBoundingClientRect();
-      
-      // 创建模拟事件对象，用于定位tooltip
-      const simulatedEvent = {
-        clientX: iframeRect.left + elementRect.left + elementRect.width / 2,
-        clientY: iframeRect.top + elementRect.top + elementRect.height / 2
-      };
+      // 计算iframe内元素在主窗口中的位置（支持多层嵌套）
+      const simulatedEvent = this.calculateNestedIframePosition(element, iframeElement);
 
       // 显示文本段翻译tooltip
       this.showTextSegmentTooltipForIframe(tooltipContent, simulatedEvent, iframeElement);
@@ -770,15 +754,8 @@ class IframeHandler {
     // console.log('=== IframeHandler: 为iframe内部元素显示基本信息 ===');
     // console.log('元素信息:', elementInfo);
     
-    // 计算iframe内元素在主窗口中的位置
-    const iframeRect = iframeElement.getBoundingClientRect();
-    const elementRect = event.target.getBoundingClientRect();
-    
-    // 创建模拟事件对象，用于定位tooltip
-    const simulatedEvent = {
-      clientX: iframeRect.left + elementRect.left + elementRect.width / 2,
-      clientY: iframeRect.top + elementRect.top + elementRect.height / 2
-    };
+    // 计算iframe内元素在主窗口中的位置（支持多层嵌套）
+    const simulatedEvent = this.calculateNestedIframePosition(event.target, iframeElement);
     
     // 清除之前的定时器
     if (this.translationTooltip.hoverTimeout) {
@@ -875,36 +852,35 @@ class IframeHandler {
    * 这个方法应该在页面初始化时调用
    */
   detectAndBindAllIframes() {
-    // console.log('=== IframeHandler: 主动检测页面中的所有iframe ===');
+    console.log('=== IframeHandler: 主动检测页面中的所有iframe ===');
     
     const iframes = document.querySelectorAll('iframe');
-    // console.log(`找到 ${iframes.length} 个iframe元素`);
+    console.log(`找到 ${iframes.length} 个iframe元素`);
     
     iframes.forEach((iframe, index) => {
-      // console.log(`处理iframe ${index + 1}:`, {
-//         id: iframe.id,
-//         src: iframe.src,
-//         className: iframe.className,
-//         width: iframe.width,
-//         height: iframe.height
-
-// });
+      console.log(`处理iframe ${index + 1}:`, {
+        id: iframe.id,
+        src: iframe.src,
+        className: iframe.className,
+        width: iframe.width,
+        height: iframe.height
+      });
       
       // 检查是否已经绑定过
       const cache = this.getCache();
       if (cache.hasIframe(iframe)) {
-        // console.log(`iframe ${index + 1} 已绑定，跳过`);
+        console.log(`iframe ${index + 1} 已绑定，跳过`);
         return;
       }
       
       // 为每个iframe添加src变化监听器
       this.addIframeSrcChangeListener(iframe);
       
-      // 尝试访问iframe内容
-      this.tryBindIframeEvents(iframe, 0);
+      // 使用递归嵌套检测方法，支持一层层往里嵌套
+      this.detectAndBindNestedIframes(iframe, 0);
     });
     
-    // console.log('所有iframe检测和绑定完成');
+    console.log('所有iframe检测和绑定完成');
   }
 
   /**
@@ -928,11 +904,13 @@ class IframeHandler {
         if (oldSrc === 'about:blank' && newSrc !== 'about:blank') {
           console.log('iframe从about:blank加载到实际内容，延迟绑定事件');
           setTimeout(() => {
+            debugger;
             this.tryBindIframeEvents(targetIframe, 0); // 重置重试次数
           }, 2000); // 给更多时间加载
         } else if (newSrc !== 'about:blank') {
           // 其他src变化
           setTimeout(() => {
+            debugger;
             this.tryBindIframeEvents(targetIframe, 0); // 重置重试次数
           }, 1000);
         }
@@ -953,43 +931,43 @@ class IframeHandler {
    * @param {number} retryCount - 当前重试次数
    */
   tryBindIframeEvents(iframe, retryCount = 0) {
-    const maxRetries = 5; // 最大重试次数
+    const maxRetries = 1; // 减少最大重试次数，提高效率
     
     // 检查是否已经绑定过
     const cache = this.getCache();
     if (cache.hasIframe(iframe)) {
-      // console.log('iframe已绑定，跳过:', iframe.src);
+      console.log('iframe已绑定，跳过:', iframe.src);
       return;
     }
     
     // 检查重试次数
     if (retryCount >= maxRetries) {
-      // console.log(`iframe重试次数已达上限(${maxRetries})，停止重试:`, iframe.src);
+      console.log(`iframe重试次数已达上限(${maxRetries})，停止重试:`, iframe.src);
       return;
     }
     
     // 特殊处理about:blank
     if (iframe.src === 'about:blank') {
       if (retryCount === 0) {
-        // console.log('iframe src为about:blank，等待实际内容加载...');
-        // 对于about:blank，只重试3次，间隔更长
+        console.log('iframe src为about:blank，等待实际内容加载...');
+        // 对于about:blank，只重试2次，间隔更短
         setTimeout(() => {
           this.tryBindIframeEvents(iframe, retryCount + 1);
-        }, 3000);
-      } else if (retryCount < 3) {
-        // console.log(`about:blank iframe重试(${retryCount + 1}/3)，等待内容加载...`);
+        }, 1000);
+      } else if (retryCount < 2) {
+        console.log(`about:blank iframe重试(${retryCount + 1}/2)，等待内容加载...`);
         setTimeout(() => {
           this.tryBindIframeEvents(iframe, retryCount + 1);
-        }, 3000);
+        }, 1000);
       } else {
-        // console.log('about:blank iframe重试次数已达上限(3)，停止重试');
+        console.log('about:blank iframe重试次数已达上限(2)，停止重试');
       }
       return;
     }
     
     // 检查iframe是否有有效的src
     if (!iframe.src || iframe.src === '') {
-      // console.log(`iframe src为空，尝试直接访问内容(${retryCount + 1}/${maxRetries}):`, iframe.src);
+      console.log(`iframe src为空，尝试直接访问内容(${retryCount + 1}/${maxRetries}):`, iframe.src);
       // 对于src为空的iframe，仍然尝试访问其内容，因为可能通过JavaScript动态写入
       // 如果无法访问，则延迟重试
       try {
@@ -997,7 +975,7 @@ class IframeHandler {
         const iframeDocument = iframe.contentDocument;
         
         if (!iframeWindow || !iframeDocument) {
-          // console.log(`src为空的iframe无法访问，延迟重试(${retryCount + 1}/${maxRetries})`);
+          console.log(`src为空的iframe无法访问，延迟重试(${retryCount + 1}/${maxRetries})`);
           setTimeout(() => {
             this.tryBindIframeEvents(iframe, retryCount + 1);
           }, 2000);
@@ -1007,10 +985,10 @@ class IframeHandler {
         // 如果能够访问，继续后续的检查流程
         console.log('src为空的iframe可以访问，继续检查内容');
       } catch (error) {
-        // console.log(`src为空的iframe访问出错，延迟重试(${retryCount + 1}/${maxRetries}):`, error);
+        console.log(`src为空的iframe访问出错，延迟重试(${retryCount + 1}/${maxRetries}):`, error);
         setTimeout(() => {
           this.tryBindIframeEvents(iframe, retryCount + 1);
-        }, 2000);
+        }, 1000);
         return;
       }
     }
@@ -1021,33 +999,128 @@ class IframeHandler {
       const iframeDocument = iframe.contentDocument;
       
       if (!iframeWindow || !iframeDocument) {
-        // console.log(`iframe无法访问，可能是跨域限制或未加载完成(${retryCount + 1}/${maxRetries})`);
-        // 延迟重试
+        console.log(`iframe无法访问，可能是跨域限制或未加载完成(${retryCount + 1}/${maxRetries})`);
+        // 延迟重试，减少延迟时间
+        setTimeout(() => {
+          this.tryBindIframeEvents(iframe, retryCount + 1);
+        }, 1000);
+        return;
+      }
+      
+      // 使用新的严格检查方法
+      if (!this.isIframeTrulyReady(iframe, iframeDocument, iframeWindow)) {
+        console.log(`iframe未完全准备好，延迟重试(${retryCount + 1}/${maxRetries}):`,iframe.src);
+        // 延迟重试，减少延迟时间
         setTimeout(() => {
           this.tryBindIframeEvents(iframe, retryCount + 1);
         }, 2000);
         return;
       }
       
-      // 使用新的严格检查方法
-      if (!this.isIframeTrulyReady(iframe, iframeDocument, iframeWindow)) {
-        // console.log(`iframe未完全准备好，延迟重试(${retryCount + 1}/${maxRetries})`);
-        // 延迟重试
-        setTimeout(() => {
-          this.tryBindIframeEvents(iframe, retryCount + 1);
-        }, 1500);
-        return;
-      }
-      
-      // console.log('iframe完全准备好，开始绑定事件:', iframe.src);
+      console.log('iframe完全准备好，开始绑定事件:', iframe.src);
       this.bindIframeEvents(iframe, iframeDocument, iframeWindow);
       
     } catch (error) {
-      // console.error(`访问iframe时出错(${retryCount + 1}/${maxRetries}):`, error);
-      // 延迟重试
+      console.error(`访问iframe时出错(${retryCount + 1}/${maxRetries}):`, error);
+      // 延迟重试，减少延迟时间
       setTimeout(() => {
         this.tryBindIframeEvents(iframe, retryCount + 1);
-      }, 2000);
+      }, 1000);
+    }
+  }
+
+  /**
+   * 递归检测并绑定嵌套iframe事件
+   * @param {Element} iframeElement - iframe元素
+   * @param {number} level - 当前嵌套层级
+   */
+  detectAndBindNestedIframes(iframeElement, level = 0) {
+    debugger;
+    console.log(`=== 检测第 ${level} 层嵌套iframe ===`);
+    console.log('iframe信息:', {
+      src: iframeElement.src,
+      id: iframeElement.id,
+      className: iframeElement.className,
+      level: level
+    });
+
+    try {
+      // 首先尝试绑定当前iframe的事件
+      this.tryBindIframeEvents(iframeElement, 0);
+
+      // 优化延迟策略：减少延迟时间，提高检测效率
+      // 第0层500ms，第1层800ms，第2层及以上1000ms
+      const delay = level === 0 ? 500 : level === 1 ? 800 : 1000;
+      console.log(`第 ${level} 层iframe等待 ${delay}ms 后检测嵌套iframe`);
+      
+      setTimeout(() => {
+        this.detectNestedIframesInCurrentLevel(iframeElement, level);
+      }, delay);
+
+    } catch (error) {
+      console.error(`处理第 ${level} 层iframe时出错:`, error);
+    }
+  }
+
+  /**
+   * 检测当前层级iframe内部的嵌套iframe
+   * @param {Element} iframeElement - iframe元素
+   * @param {number} level - 当前嵌套层级
+   */
+  detectNestedIframesInCurrentLevel(iframeElement, level) {
+    debugger;
+    try {
+      const iframeDocument = iframeElement.contentDocument;
+      const iframeWindow = iframeElement.contentWindow;
+
+      if (iframeDocument && iframeWindow) {
+        console.log(`第 ${level} 层iframe内容可访问，检测内部嵌套iframe`);
+        
+        // 检测当前iframe内部的嵌套iframe
+        const nestedIframes = iframeDocument.querySelectorAll('iframe');
+        console.log(`第 ${level} 层iframe内部找到 ${nestedIframes.length} 个嵌套iframe`);
+
+        if (nestedIframes.length > 0) {
+          nestedIframes.forEach((nestedIframe, index) => {
+            console.log(`处理第 ${level} 层iframe内部的第 ${index + 1} 个嵌套iframe:`, {
+              src: nestedIframe.src,
+              id: nestedIframe.id,
+              className: nestedIframe.className,
+              level: level + 1
+            });
+
+            // 立即尝试绑定当前嵌套iframe的事件
+            this.tryBindIframeEvents(nestedIframe, 0);
+            
+            // 递归检测更深层的嵌套iframe，使用更短的延迟
+            setTimeout(() => {
+              this.detectAndBindNestedIframes(nestedIframe, level + 1);
+            }, 300); // 减少延迟到300ms
+          });
+        } else {
+          console.log(`第 ${level} 层iframe内部没有找到嵌套iframe`);
+        }
+      } else {
+        console.log(`第 ${level} 层iframe内容不可访问，可能是跨域限制或未加载完成`);
+        
+        // 如果内容不可访问，尝试延迟重试
+        if (level < 3) { // 最多重试3次
+          console.log(`第 ${level} 层iframe内容不可访问，500ms后重试`);
+          setTimeout(() => {
+            this.detectNestedIframesInCurrentLevel(iframeElement, level);
+          }, 500);
+        }
+      }
+    } catch (error) {
+      console.warn(`检测第 ${level} 层iframe内部嵌套时出错:`, error);
+      
+      // 出错时也尝试重试
+      if (level < 3) {
+        console.log(`第 ${level} 层iframe检测出错，500ms后重试`);
+        setTimeout(() => {
+          this.detectNestedIframesInCurrentLevel(iframeElement, level);
+        }, 500);
+      }
     }
   }
 
@@ -1124,7 +1197,7 @@ class IframeHandler {
       
       // 检查LightweightPopupDetector是否可用
       if (typeof LightweightPopupDetector !== 'undefined') {
-        console.log('为iframe创建独立弹窗检测器:', iframeWindow.location?.href);
+        // console.log('为iframe创建独立弹窗检测器:', iframeWindow.location?.href);
         
         // 创建iframe专用的弹窗检测器
         const iframeDetector = new LightweightPopupDetector(this, 'iframe');
@@ -1142,7 +1215,7 @@ class IframeHandler {
           iframeDetector.smartDetectPopupIframes();
         }, 1000); // 给iframe一点时间完全加载
         
-        console.log('iframe独立弹窗检测器初始化完成');
+        // console.log('iframe独立弹窗检测器初始化完成');
       } else {
         console.warn('LightweightPopupDetector不可用，无法在iframe中初始化');
       }
@@ -1160,6 +1233,62 @@ class IframeHandler {
     console.log('调用兼容性方法setupIframePopupDetection');
     // 调用新的独立检测器方法
     this.initIframePopupDetector(null, iframeDocument, iframeWindow);
+  }
+
+  /**
+   * 计算嵌套iframe中元素在主窗口中的位置
+   * @param {Element} element - iframe内的目标元素
+   * @param {Element} iframeElement - 直接父iframe元素
+   * @returns {Object} - 模拟事件对象，包含正确的位置信息
+   */
+  calculateNestedIframePosition(element, iframeElement) {
+    // 获取元素在iframe内的位置
+    const elementRect = element.getBoundingClientRect();
+    
+    // 获取直接父iframe在主窗口中的位置
+    const iframeRect = iframeElement.getBoundingClientRect();
+    
+    // 计算元素在主窗口中的绝对位置
+    const absoluteX = iframeRect.left + elementRect.left;
+    const absoluteY = iframeRect.top + elementRect.top;
+    
+    // 创建模拟事件对象
+    const simulatedEvent = {
+      clientX: absoluteX + elementRect.width / 2,
+      clientY: absoluteY + elementRect.height / 2,
+      target: element,
+      iframeElement: iframeElement,
+      nestedLevel: this.getIframeNestedLevel(element)
+    };
+    
+    // console.log('嵌套iframe位置计算:', {
+    //   elementRect: elementRect,
+    //   iframeRect: iframeRect,
+    //   absolutePosition: { x: absoluteX, y: absoluteY },
+    //   simulatedEvent: simulatedEvent
+    // });
+    
+    return simulatedEvent;
+  }
+
+  /**
+   * 获取元素所在的iframe嵌套层级
+   * @param {Element} element - 目标元素
+   * @returns {number} - 嵌套层级
+   */
+  getIframeNestedLevel(element) {
+    let level = 0;
+    let currentElement = element;
+    
+    // 向上遍历DOM树，计算嵌套层级
+    while (currentElement && currentElement !== document) {
+      if (currentElement.tagName === 'IFRAME') {
+        level++;
+      }
+      currentElement = currentElement.parentElement;
+    }
+    
+    return level;
   }
 
   /**

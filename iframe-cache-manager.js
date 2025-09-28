@@ -26,7 +26,7 @@ class IframeCacheManager {
    */
   addIframe(iframe, document = null) {
     if (!iframe || !iframe.tagName || iframe.tagName !== 'IFRAME') {
-      console.warn('无效的iframe元素，无法添加到缓存');
+    //   console.warn('无效的iframe元素，无法添加到缓存');
       return false;
     }
 
@@ -66,7 +66,7 @@ class IframeCacheManager {
    */
   removeIframe(iframe) {
     if (!iframe) {
-      console.warn('无效的iframe元素，无法从缓存移除');
+    //   console.warn('无效的iframe元素，无法从缓存移除');
       return false;
     }
 
@@ -81,11 +81,11 @@ class IframeCacheManager {
         cacheSize: this.boundIframes.size
       });
     } else {
-      console.log('iframe不在缓存中，无需移除:', {
-        src: iframe.src,
-        id: iframe.id,
-        className: iframe.className
-      });
+    //   console.log('iframe不在缓存中，无需移除:', {
+    //     src: iframe.src,
+    //     id: iframe.id,
+    //     className: iframe.className
+    //   });
     }
 
     return wasRemoved;
@@ -122,8 +122,8 @@ class IframeCacheManager {
    * @returns {number} - 清理的iframe数量
    */
   cleanupRemovedIframes(document = window.document) {
-    console.log('开始清理已移除的iframe缓存');
-    console.log('清理前缓存大小:', this.boundIframes.size);
+    // console.log('开始清理已移除的iframe缓存');
+    // console.log('清理前缓存大小:', this.boundIframes.size);
 
     const iframesToRemove = [];
     
@@ -141,13 +141,13 @@ class IframeCacheManager {
           iframesToRemove.push(iframe);
         }
       } else {
-        console.log('跳过跨document检查iframe:', {
-          src: iframe.src,
-          id: iframe.id,
-          className: iframe.className,
-          iframeDocument: iframeDocument,
-          checkDocument: document
-        });
+        // console.log('跳过跨document检查iframe:', {
+        //   src: iframe.src,
+        //   id: iframe.id,
+        //   className: iframe.className,
+        //   iframeDocument: iframeDocument,
+        //   checkDocument: document
+        // });
       }
     });
 
@@ -186,18 +186,18 @@ class IframeCacheManager {
     let cleanedCount = 0;
     iframesInPopup.forEach((iframe, index) => {
       const iframeDocument = this.boundIframes.get(iframe);
-      console.log(`检查iframe ${index + 1}:`, {
-        src: iframe.src,
-        id: iframe.id,
-        className: iframe.className,
-        inCache: this.boundIframes.has(iframe),
-        iframeDocument: iframeDocument
-      });
+    //   console.log(`检查iframe ${index + 1}:`, {
+    //     src: iframe.src,
+    //     id: iframe.id,
+    //     className: iframe.className,
+    //     inCache: this.boundIframes.has(iframe),
+    //     iframeDocument: iframeDocument
+    //   });
 
       if (this.boundIframes.has(iframe)) {
         this.boundIframes.delete(iframe);
         cleanedCount++;
-        console.log('已从缓存移除iframe');
+        // console.log('已从缓存移除iframe');
       }
     });
 
@@ -214,7 +214,7 @@ class IframeCacheManager {
    */
   startPeriodicCleanup(intervalMs = null, document = window.document) {
     if (this.cleanupInterval) {
-      console.log('定期清理机制已在运行');
+    //   console.log('定期清理机制已在运行');
       return;
     }
 
@@ -228,7 +228,7 @@ class IframeCacheManager {
       }
     }, interval);
 
-    console.log('定期清理机制已启动');
+    // console.log('定期清理机制已启动');
   }
 
   /**

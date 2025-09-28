@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-09-25 16:55:21
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-26 13:59:35
+ * @LastEditTime: 2025-09-28 17:15:37
  * @FilePath: /transition-extension/content.js
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -40,7 +40,7 @@ class TranslationTooltip {
       // 主动检测并绑定iframe事件
       if (this.iframeHandler) {
         // console.log('开始主动检测iframe...');
-        this.iframeHandler.detectAndBindAllIframes();
+        // this.iframeHandler.detectAndBindAllIframes();
         
         // 延迟检测，处理动态加载的iframe（只检测一次，避免重复）
         this.iframeHandler.delayedDetectIframes(3000);
@@ -387,7 +387,7 @@ class TranslationTooltip {
       context: 'main',
       debug: true,
       onNewIframe: (newIframes, observerId) => {
-        console.log('检测到新iframe，延迟绑定事件');
+        console.log('检测到新iframe，延迟绑定事件：', newIframes[0].src);
         this.scheduleIframeDetection('new-iframe');
       },
       onPopupChange: (popupChanges, observerId) => {
@@ -458,7 +458,7 @@ class TranslationTooltip {
     
     // 2. 然后检测页面中非弹窗区域的iframe
     console.log('步骤2: 检测非弹窗区域iframe');
-    this.detectNonPopupIframes();
+    this.detectNonPopupIframes(); //非弹窗iframe检测通过
     
     console.log('=== 智能混合iframe检测完成 ===');
   }
@@ -634,11 +634,11 @@ class TranslationTooltip {
   cleanupIframesInRemovedPopup(removedPopup) {
     if (!this.iframeHandler || !removedPopup) return;
     
-    console.log('开始清理被移除弹窗内的iframe缓存:', {
-      tagName: removedPopup.tagName,
-      className: removedPopup.className,
-      id: removedPopup.id
-    });
+    // console.log('开始清理被移除弹窗内的iframe缓存:', {
+    //   tagName: removedPopup.tagName,
+    //   className: removedPopup.className,
+    //   id: removedPopup.id
+    // });
     
     // 使用缓存管理器的弹窗清理方法
     const cache = this.iframeHandler.getCache();
@@ -656,15 +656,15 @@ class TranslationTooltip {
     const cache = this.iframeHandler.getCache();
     const isInCache = cache.hasIframe(iframe);
     
-    console.log('清理iframe缓存:', {
-      src: iframe.src,
-      id: iframe.id,
-      isInCache: isInCache
-    });
+    // console.log('清理iframe缓存:', {
+    //   src: iframe.src,
+    //   id: iframe.id,
+    //   isInCache: isInCache
+    // });
     
     // 如果iframe在缓存中，清理它
     if (isInCache) {
-      console.log('从缓存中移除iframe');
+    //   console.log('从缓存中移除iframe');
       this.iframeHandler.cleanupIframeEvents(iframe);
     }
   }
@@ -676,12 +676,12 @@ class TranslationTooltip {
   cleanupRemovedPopupCache() {
     if (!this.iframeHandler) return;
     
-    console.log('开始清理被移除弹窗的缓存');
+    // console.log('开始清理被移除弹窗的缓存');
     
     // 使用缓存管理器的清理方法
     const cache = this.iframeHandler.getCache();
     const cleanedCount = cache.cleanupRemovedIframes();
-    console.log(`缓存管理器清理完成，移除了 ${cleanedCount} 个iframe`);
+    // console.log(`缓存管理器清理完成，移除了 ${cleanedCount} 个iframe`);
   }
 
   /**
@@ -689,12 +689,12 @@ class TranslationTooltip {
    * 使用iframe缓存管理器的定期清理功能
    */
   startPeriodicCleanup() {
-    console.log('启动定期清理机制');
+    // console.log('启动定期清理机制');
     
     // 使用缓存管理器的定期清理机制
     const cache = this.iframeHandler.getCache();
     cache.startPeriodicCleanup();
-    console.log('使用iframe缓存管理器的定期清理机制');
+    // console.log('使用iframe缓存管理器的定期清理机制');
   }
 
   /**

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>嵌套iframe功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        
+        .section h2 {
+            color: #555;
+            margin-top: 0;
+        }
+        
+        .iframe-container {
+            margin: 15px 0;
+            padding: 10px;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            min-height: 200px;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 200px;
+            border: 1px solid #999;
+            border-radius: 3px;
+        }
+        
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        button.danger {
+            background-color: #f44336;
+        }
+        
+        button.danger:hover {
+            background-color: #da190b;
+        }
+        
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            border-radius: 4px;
+        }
+        
+        .log {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .nested-info {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>嵌套iframe功能测试 - A>B>C>D 4层嵌套</h1>
+        
+        <div class="nested-info">
+            <h3>测试说明</h3>
+            <p>此页面用于测试修改后的嵌套iframe检测功能。点击"添加多层嵌套iframe"按钮将创建一个4层嵌套的iframe结构：</p>
+            <ul>
+                <li><strong>第1层 (A)</strong>: 主iframe</li>
+                <li><strong>第2层 (B)</strong>: 嵌套在A内部</li>
+                <li><strong>第3层 (C)</strong>: 嵌套在B内部</li>
+                <li><strong>第4层 (D)</strong>: 嵌套在C内部</li>
+            </ul>
+            <p>修改后的功能将支持一层层往里嵌套执行，而不是只在最外层iframe中执行。</p>
+        </div>
+        
+        <div class="section">
+            <h2>控制面板</h2>
+            <div class="controls">
+                <button onclick="addNestedIframe()">添加多层嵌套iframe (A>B>C>D)</button>
+                <button onclick="removeLastIframe()" class="danger">移除最后一个iframe</button>
+                <button onclick="clearAllIframes()" class="danger">清空所有iframe</button>
+                <button onclick="showStatus()">显示状态</button>
+                <button onclick="testTooltipFunctionality()">测试tooltip功能</button>
+                <button onclick="clearLog()">清空日志</button>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>状态信息</h2>
+            <div id="status" class="status">
+                等待检测iframe...
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>iframe容器</h2>
+            <div id="iframeContainer" class="iframe-container">
+                <p>多层嵌套iframe将在这里显示</p>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>日志输出</h2>
+            <div id="log" class="log">
+                日志将在这里显示...<br>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let iframeCounter = 0;
+        
+        // 重写console.log来显示在页面上
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        function addToLog(message, type = 'log') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'red' : type === 'warn' ? 'orange' : 'black';
+            logDiv.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span><br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToLog(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToLog(args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToLog(args.join(' '), 'warn');
+        };
+        
+        function addNestedIframe() {
+            iframeCounter++;
+            const iframe = document.createElement('iframe');
+            iframe.id = `nested-iframe-${iframeCounter}`;
+            
+            // 创建4层嵌套的iframe结构：A>B>C>D
+            const level4Content = encodeURIComponent('<html><body style="padding: 8px; background: #d8d8d8;"><h6>第4层 iframe (D)</h6><p>这是第4层嵌套的iframe内容。</p><button>第4层按钮</button><span>第4层文本</span><p>右键点击任何元素测试翻译功能</p></body></html>');
+            const level3Content = encodeURIComponent(`<html><body style="padding: 10px; background: #e8e8e8;"><h5>第3层 iframe (C)</h5><p>这是第3层嵌套的iframe内容。</p><button>第3层按钮</button><span>第3层文本</span><iframe src="data:text/html,${level4Content}" style="width: 100%; height: 100px; border: 1px solid #ccc;"></iframe></body></html>`);
+            const level2Content = encodeURIComponent(`<html><body style="padding: 15px; background: #f0f0f0;"><h4>第2层 iframe (B)</h4><p>这是第2层嵌套的iframe内容。</p><button>第2层按钮</button><span>第2层文本</span><iframe src="data:text/html,${level3Content}" style="width: 100%; height: 120px; border: 1px solid #ccc;"></iframe></body></html>`);
+            const level1Content = encodeURIComponent(`<html><body style="font-family: Arial; padding: 20px; background: #f9f9f9;"><h3>第1层 iframe (A)</h3><p>这是第1层嵌套的测试iframe。</p><button>第1层按钮</button><span>第1层文本</span><iframe src="data:text/html,${level2Content}" style="width: 100%; height: 140px; border: 1px solid #ccc;"></iframe></body></html>`);
+            
+            iframe.src = `data:text/html,${level1Content}`;
+            iframe.title = `多层嵌套iframe ${iframeCounter}`;
+            
+            const container = document.getElementById('iframeContainer');
+            container.appendChild(iframe);
+            
+            console.log(`添加了4层嵌套iframe: ${iframe.id}`);
+            console.log('嵌套结构: A>B>C>D (第1层>第2层>第3层>第4层)');
+            updateStatus();
+        }
+        
+        function removeLastIframe() {
+            const container = document.getElementById('iframeContainer');
+            const iframes = container.querySelectorAll('iframe');
+            if (iframes.length > 0) {
+                const lastIframe = iframes[iframes.length - 1];
+                console.log(`移除iframe: ${lastIframe.id}`);
+                container.removeChild(lastIframe);
+                updateStatus();
+            } else {
+                console.log('没有iframe可以移除');
+            }
+        }
+        
+        function clearAllIframes() {
+            const container = document.getElementById('iframeContainer');
+            const iframes = container.querySelectorAll('iframe');
+            console.log(`清空所有iframe，共 ${iframes.length} 个`);
+            iframes.forEach(iframe => {
+                container.removeChild(iframe);
+            });
+            updateStatus();
+        }
+        
+        function showStatus() {
+            if (window.contextMenuTranslator && window.contextMenuTranslator.iframeContextMenuManager) {
+                const manager = window.contextMenuTranslator.iframeContextMenuManager;
+                manager.printStatus();
+            } else {
+                console.log('iframe右键菜单管理器未找到');
+            }
+            
+            // 添加嵌套iframe检测状态显示
+            console.log('=== 嵌套iframe检测状态 ===');
+            const allIframes = document.querySelectorAll('iframe');
+            console.log(`页面中总共有 ${allIframes.length} 个iframe`);
+            
+            allIframes.forEach((iframe, index) => {
+                console.log(`iframe ${index + 1}:`, {
+                    id: iframe.id,
+                    src: iframe.src,
+                    readyState: iframe.contentDocument?.readyState || 'unknown',
+                    hasContent: iframe.contentDocument?.body ? 'yes' : 'no',
+                    nestedIframes: iframe.contentDocument?.querySelectorAll('iframe').length || 0
+                });
+                
+                // 检查嵌套iframe
+                try {
+                    const nestedIframes = iframe.contentDocument?.querySelectorAll('iframe');
+                    if (nestedIframes && nestedIframes.length > 0) {
+                        console.log(`  - 第${index + 1}个iframe内部有 ${nestedIframes.length} 个嵌套iframe`);
+                        nestedIframes.forEach((nested, nestedIndex) => {
+                            console.log(`    嵌套iframe ${nestedIndex + 1}:`, {
+                                src: nested.src,
+                                readyState: nested.contentDocument?.readyState || 'unknown',
+                                hasContent: nested.contentDocument?.body ? 'yes' : 'no'
+                            });
+                        });
+                    }
+                } catch (error) {
+                    console.log(`  - 第${index + 1}个iframe无法访问嵌套内容:`, error.message);
+                }
+            });
+        }
+        
+        function testTooltipFunctionality() {
+            console.log('=== 测试tooltip功能 ===');
+            
+            const allIframes = document.querySelectorAll('iframe');
+            if (allIframes.length === 0) {
+                console.log('没有iframe可以测试，请先添加嵌套iframe');
+                return;
+            }
+            
+            allIframes.forEach((iframe, index) => {
+                console.log(`测试第 ${index + 1} 个iframe的tooltip功能:`);
+                
+                try {
+                    const iframeDoc = iframe.contentDocument;
+                    if (!iframeDoc) {
+                        console.log(`  - 第 ${index + 1} 个iframe无法访问内容`);
+                        return;
+                    }
+                    
+                    // 测试第1层iframe内的元素
+                    const buttons = iframeDoc.querySelectorAll('button');
+                    const spans = iframeDoc.querySelectorAll('span');
+                    console.log(`  - 第 ${index + 1} 个iframe内找到 ${buttons.length} 个按钮, ${spans.length} 个span元素`);
+                    
+                    // 检查嵌套iframe
+                    const nestedIframes = iframeDoc.querySelectorAll('iframe');
+                    if (nestedIframes.length > 0) {
+                        console.log(`  - 第 ${index + 1} 个iframe内有 ${nestedIframes.length} 个嵌套iframe`);
+                        
+                        nestedIframes.forEach((nestedIframe, nestedIndex) => {
+                            try {
+                                const nestedDoc = nestedIframe.contentDocument;
+                                if (nestedDoc) {
+                                    const nestedButtons = nestedDoc.querySelectorAll('button');
+                                    const nestedSpans = nestedDoc.querySelectorAll('span');
+                                    console.log(`    - 嵌套iframe ${nestedIndex + 1} 内找到 ${nestedButtons.length} 个按钮, ${nestedSpans.length} 个span元素`);
+                                    
+                                    // 检查更深层的嵌套
+                                    const deeperNested = nestedDoc.querySelectorAll('iframe');
+                                    if (deeperNested.length > 0) {
+                                        console.log(`    - 嵌套iframe ${nestedIndex + 1} 内还有 ${deeperNested.length} 个更深层嵌套`);
+                                    }
+                                } else {
+                                    console.log(`    - 嵌套iframe ${nestedIndex + 1} 无法访问内容`);
+                                }
+                            } catch (error) {
+                                console.log(`    - 嵌套iframe ${nestedIndex + 1} 访问出错:`, error.message);
+                            }
+                        });
+                    }
+                    
+                } catch (error) {
+                    console.log(`  - 第 ${index + 1} 个iframe测试出错:`, error.message);
+                }
+            });
+            
+            console.log('=== tooltip功能测试完成 ===');
+            console.log('请手动将鼠标悬停在各个iframe内的元素上测试tooltip是否正常显示');
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '日志已清空...<br>';
+        }
+        
+        function updateStatus() {
+            const statusDiv = document.getElementById('status');
+            const iframes = document.querySelectorAll('iframe');
+            statusDiv.innerHTML = `
+                <strong>当前状态:</strong><br>
+                - 页面中iframe数量: ${iframes.length}<br>
+                - 测试iframe计数器: ${iframeCounter}<br>
+                - 嵌套结构: A>B>C>D (4层嵌套)<br>
+                - 功能: 支持一层层往里嵌套执行<br>
+                - 时间: ${new Date().toLocaleString()}
+            `;
+        }
+        
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('嵌套iframe功能测试页面加载完成');
+            console.log('修改后的功能将支持一层层往里嵌套执行');
+            updateStatus();
+            
+            // 等待扩展加载
+            setTimeout(() => {
+                if (window.contextMenuTranslator) {
+                    console.log('右键菜单翻译器已加载');
+                    if (window.contextMenuTranslator.iframeContextMenuManager) {
+                        console.log('iframe右键菜单管理器已加载');
+                        window.contextMenuTranslator.iframeContextMenuManager.printStatus();
+                    }
+                    
+                    // 检查iframe处理器
+                    if (window.contextMenuTranslator.iframeHandler) {
+                        console.log('iframe处理器已加载');
+                        console.log('iframe处理器缓存状态:', window.contextMenuTranslator.iframeHandler.getCache().getStats());
+                    }
+                } else {
+                    console.log('等待右键菜单翻译器加载...');
+                }
+            }, 2000);
+            
+            // 添加页面说明
+            console.log('=== 测试说明 ===');
+            console.log('1. 点击"添加多层嵌套iframe"按钮创建4层嵌套结构');
+            console.log('2. 点击"显示状态"按钮查看iframe检测状态');
+            console.log('3. 点击"测试tooltip功能"按钮检查各层元素');
+            console.log('4. 将鼠标悬停在各个iframe内的元素上测试tooltip');
+            console.log('5. 观察控制台日志了解检测和绑定过程');
+        });
+        
+        // 定期更新状态
+        setInterval(updateStatus, 5000);
+    </script>
+</body>
+</html>
