@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-01-27 10:00:00
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-28 17:19:00
+ * @LastEditTime: 2025-09-28 19:23:28
  * @FilePath: /transition-extension/floating-ball-translator.js
  * @Description: 悬浮球翻译功能控制器 - 独立文件实现
  */
@@ -358,10 +358,10 @@ class FloatingBallTranslator {
     // // console.log('绑定悬浮球事件');
     
     // 悬浮球点击事件 - 切换翻译状态
-    this.floatingBall.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.toggleTranslation();
-    });
+    // this.floatingBall.addEventListener('click', (e) => {
+    //   e.stopPropagation();
+    //   this.toggleTranslation();
+    // });
 
     // 悬浮球点击事件保持原有逻辑，鼠标事件由统一跟踪处理
 
