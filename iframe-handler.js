@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-09-25 16:55:21
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-28 17:26:08
+ * @LastEditTime: 2025-09-28 19:13:33
  * @FilePath: /transition-extension/iframe-handler.js
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -195,7 +195,6 @@ class IframeHandler {
       
       // 调试iframe状态
       this.debugIframeStatus(iframeElement);
-      
       // 在iframe中绑定事件监听器
       this.bindIframeEvents(iframeElement, iframeDocument, iframeWindow);
       
@@ -909,8 +908,8 @@ class IframeHandler {
           }, 2000); // 给更多时间加载
         } else if (newSrc !== 'about:blank') {
           // 其他src变化
+          console.log('iframe src变化，延迟绑定事件:',newSrc);
           setTimeout(() => {
-            debugger;
             this.tryBindIframeEvents(targetIframe, 0); // 重置重试次数
           }, 1000);
         }
@@ -931,7 +930,7 @@ class IframeHandler {
    * @param {number} retryCount - 当前重试次数
    */
   tryBindIframeEvents(iframe, retryCount = 0) {
-    const maxRetries = 1; // 减少最大重试次数，提高效率
+    const maxRetries = 6; // 减少最大重试次数，提高效率
     
     // 检查是否已经绑定过
     const cache = this.getCache();

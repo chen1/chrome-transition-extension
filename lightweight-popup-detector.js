@@ -429,8 +429,8 @@ class LightweightPopupDetector {
     if (!element || !element.tagName) return false;
     
     const tagName = element.tagName.toLowerCase();
-    const className = element.className.toLowerCase();
-    const id = element.id.toLowerCase();
+    const className = (element.className || '').toString().toLowerCase();
+    const id = (element.id || '').toLowerCase();
     
     // 排除类名包含.blockUI.blockOverlay的元素
     if (className.includes('blockui') && className.includes('blockoverlay')) {

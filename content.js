@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-09-25 16:55:21
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-28 17:37:34
+ * @LastEditTime: 2025-09-28 18:59:42
  * @FilePath: /transition-extension/content.js
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -422,7 +422,16 @@ class TranslationTooltip {
     if (this._iframeDetectionTimeout) {
       clearTimeout(this._iframeDetectionTimeout);
     }
-    
+    //直接使用iframeHandler检测所有iframes
+    if (this.iframeHandler) {
+        // console.log('开始主动检测iframe...');
+        // this.iframeHandler.detectAndBindAllIframes();
+        
+        // 延迟检测，处理动态加载的iframe（只检测一次，避免重复）
+        this.iframeHandler.delayedDetectIframes(3000);
+        return;
+
+    }
     // 根据原因设置不同的延迟时间
     let delay = 1000;
     if (reason === 'popup-change') delay = 500;
@@ -450,15 +459,6 @@ class TranslationTooltip {
    * 避免重复检测，分别处理弹窗内和页面中的iframe
    */
   smartHybridIframeDetection() {
-    if (this.iframeHandler) {
-        // console.log('开始主动检测iframe...');
-        // this.iframeHandler.detectAndBindAllIframes();
-        
-        // 延迟检测，处理动态加载的iframe（只检测一次，避免重复）
-        this.iframeHandler.delayedDetectIframes(3000);
-        return;
-
-    }
     console.log('=== 开始智能混合iframe检测 ===');
     
     // 1. 首先使用轻量级检测器处理弹窗内的iframe
@@ -609,8 +609,8 @@ class TranslationTooltip {
     if (!element || !element.tagName) return false;
     
     const tagName = element.tagName.toLowerCase();
-    const className = element.className.toLowerCase();
-    const id = element.id.toLowerCase();
+    const className = (element.className || '').toString().toLowerCase();
+    const id = (element.id || '').toLowerCase();
     
     // 检查标签名
     const popupTags = ['dialog', 'modal', 'popup', 'overlay'];
@@ -733,11 +733,11 @@ class TranslationTooltip {
     this.resetPointerEventsForElement(element);
     
     // 检查是否为iframe元素
-    if (this.iframeHandler && this.iframeHandler.isIframe(element)) {
-      // console.log('检测到iframe元素，使用iframe处理器处理');
-      this.iframeHandler.handleIframeElement(element, event);
-      return;
-    }
+    // if (this.iframeHandler && this.iframeHandler.isIframe(element)) {
+    //   // console.log('检测到iframe元素，使用iframe处理器处理');
+    //   this.iframeHandler.handleIframeElement(element, event);
+    //   return;
+    // }
     
     // 检查是否在iframe内部 - 如果当前元素在iframe内，不处理主窗口的事件
     if (this.iframeHandler && this.iframeHandler.isInsideIframe(element)) {

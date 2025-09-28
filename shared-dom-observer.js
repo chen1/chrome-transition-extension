@@ -315,8 +315,8 @@ class SharedDOMObserver {
     if (!element || !element.tagName) return false;
 
     const tagName = element.tagName.toLowerCase();
-    const className = element.className.toLowerCase();
-    const id = element.id.toLowerCase();
+    const className = (element.className || '').toString().toLowerCase();
+    const id = (element.id || '').toLowerCase();
 
     // 检查标签名
     const popupTags = ['dialog', 'modal', 'popup', 'overlay'];
