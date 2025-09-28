@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-01-27 10:00:00
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-28 16:43:03
+ * @LastEditTime: 2025-09-28 17:19:00
  * @FilePath: /transition-extension/floating-ball-translator.js
  * @Description: 悬浮球翻译功能控制器 - 独立文件实现
  */
@@ -22,13 +22,13 @@ class FloatingBallTranslator {
   }
 
   async init() {
-    console.log('悬浮球翻译功能初始化开始');
+    // console.log('悬浮球翻译功能初始化开始');
     
     try {
       // 检查是否已有翻译工具实例
       if (window.translationTooltip) {
         this.translationTooltip = window.translationTooltip;
-        console.log('复用现有翻译工具实例');
+        // console.log('复用现有翻译工具实例');
         
         // 等待现有实例完全初始化
         await this.waitForTranslationTooltipReady();
@@ -50,9 +50,9 @@ class FloatingBallTranslator {
       this.loadTranslationState();
       
       
-      console.log('悬浮球翻译功能初始化完成');
+      // console.log('悬浮球翻译功能初始化完成');
     } catch (error) {
-      console.error('悬浮球翻译功能初始化失败:', error);
+      // console.error('悬浮球翻译功能初始化失败:', error);
     }
   }
 
@@ -61,7 +61,7 @@ class FloatingBallTranslator {
    * 创建翻译工具实例
    */
   async createTranslationTooltip() {
-    console.log('创建新的翻译工具实例');
+    // console.log('创建新的翻译工具实例');
     
     // 动态导入TranslationTooltip类
     if (typeof TranslationTooltip !== 'undefined') {
@@ -71,7 +71,7 @@ class FloatingBallTranslator {
       // 等待TranslationTooltip完全初始化
       await this.waitForTranslationTooltipReady();
     } else {
-      console.error('TranslationTooltip类未找到');
+      // console.error('TranslationTooltip类未找到');
       throw new Error('TranslationTooltip类未找到');
     }
   }
@@ -80,7 +80,7 @@ class FloatingBallTranslator {
    * 等待TranslationTooltip完全初始化
    */
   async waitForTranslationTooltipReady() {
-    console.log('等待TranslationTooltip完全初始化...');
+    // console.log('等待TranslationTooltip完全初始化...');
     
     let attempts = 0;
     const maxAttempts = 50; // 最多等待5秒
@@ -89,7 +89,7 @@ class FloatingBallTranslator {
       if (this.translationTooltip && 
           this.translationTooltip.iframeHandler && 
           this.translationTooltip.tooltip) {
-        console.log('TranslationTooltip初始化完成');
+        // console.log('TranslationTooltip初始化完成');
         return;
       }
       
@@ -98,14 +98,14 @@ class FloatingBallTranslator {
       attempts++;
     }
     
-    console.warn('TranslationTooltip初始化超时，但继续执行');
+    // console.warn('TranslationTooltip初始化超时，但继续执行');
   }
 
   /**
    * 创建悬浮球
    */
   createFloatingBall() {
-    console.log('创建悬浮球');
+    // console.log('创建悬浮球');
     
     // 创建悬浮球容器
     this.floatingBall = document.createElement('div');
@@ -147,14 +147,14 @@ class FloatingBallTranslator {
     // 将悬浮球添加到页面
     document.body.appendChild(this.floatingBall);
     
-    console.log('悬浮球创建完成');
+    // console.log('悬浮球创建完成');
   }
 
   /**
    * 创建展开菜单
    */
   createExpandedMenu() {
-    console.log('创建展开菜单');
+    // console.log('创建展开菜单');
     
     // 创建菜单容器
     this.expandedMenu = document.createElement('div');
@@ -209,7 +209,7 @@ class FloatingBallTranslator {
     // 为菜单添加鼠标事件
     this.bindExpandedMenuEvents();
     
-    console.log('展开菜单创建完成');
+    // console.log('展开菜单创建完成');
   }
 
   /**
@@ -314,7 +314,7 @@ class FloatingBallTranslator {
       
       if (isOverFloatingArea && !isMouseOverFloatingArea) {
         // 鼠标进入悬浮区域
-        console.log('鼠标进入悬浮区域');
+        // console.log('鼠标进入悬浮区域');
         isMouseOverFloatingArea = true;
         if (this.hideMenuTimeout) {
           clearTimeout(this.hideMenuTimeout);
@@ -325,7 +325,7 @@ class FloatingBallTranslator {
         }
       } else if (!isOverFloatingArea && isMouseOverFloatingArea) {
         // 鼠标离开悬浮区域
-        console.log('鼠标离开悬浮区域');
+        // console.log('鼠标离开悬浮区域');
         isMouseOverFloatingArea = false;
         this.scheduleHideMenu();
       }
@@ -336,16 +336,16 @@ class FloatingBallTranslator {
    * 延迟隐藏菜单
    */
   scheduleHideMenu() {
-    console.log('开始延迟隐藏菜单');
+    // console.log('开始延迟隐藏菜单');
     // 清除之前的定时器
     if (this.hideMenuTimeout) {
       clearTimeout(this.hideMenuTimeout);
-      console.log('清除之前的隐藏定时器');
+    //   // console.log('清除之前的隐藏定时器');
     }
     
     // 设置延迟隐藏（300ms）
     this.hideMenuTimeout = setTimeout(() => {
-      console.log('延迟时间到，隐藏菜单');
+    //   // console.log('延迟时间到，隐藏菜单');
       this.hideExpandedMenu();
       this.hideMenuTimeout = null;
     }, 300);
@@ -355,7 +355,7 @@ class FloatingBallTranslator {
    * 绑定悬浮球事件
    */
   bindFloatingBallEvents() {
-    console.log('绑定悬浮球事件');
+    // // console.log('绑定悬浮球事件');
     
     // 悬浮球点击事件 - 切换翻译状态
     this.floatingBall.addEventListener('click', (e) => {
@@ -392,7 +392,7 @@ class FloatingBallTranslator {
       }
     });
 
-    console.log('悬浮球事件绑定完成');
+    // // console.log('悬浮球事件绑定完成');
   }
 
   /**
@@ -491,7 +491,7 @@ class FloatingBallTranslator {
       this.expandedMenu.style.transform = 'translateY(0)';
     });
     
-    console.log('展开菜单已显示');
+    // // console.log('展开菜单已显示');
   }
 
   /**
@@ -507,7 +507,7 @@ class FloatingBallTranslator {
       this.expandedMenu.style.display = 'none';
     }, 300);
     
-    console.log('展开菜单已隐藏');
+    // // console.log('展开菜单已隐藏');
   }
 
   /**
@@ -534,9 +534,9 @@ class FloatingBallTranslator {
       };
       
       localStorage.setItem('translation-floating-ball-position', JSON.stringify(position));
-      console.log('悬浮球位置已保存:', position);
+      // console.log('悬浮球位置已保存:', position);
     } catch (error) {
-      console.error('保存悬浮球位置失败:', error);
+      // console.error('保存悬浮球位置失败:', error);
     }
   }
 
@@ -558,13 +558,13 @@ class FloatingBallTranslator {
           this.floatingBall.style.right = 'auto';
           this.floatingBall.style.bottom = 'auto';
           
-          console.log('悬浮球位置已恢复:', position);
+          // console.log('悬浮球位置已恢复:', position);
         } else {
-          console.log('保存的位置无效，使用默认位置');
+          // console.log('保存的位置无效，使用默认位置');
         }
       }
     } catch (error) {
-      console.error('加载悬浮球位置失败:', error);
+      // console.error('加载悬浮球位置失败:', error);
     }
   }
 
@@ -602,10 +602,10 @@ class FloatingBallTranslator {
    * @param {boolean} isInitialization - 是否为初始化时的自动开启
    */
   enableTranslation(isInitialization = false) {
-    console.log('开启翻译功能', isInitialization ? '(初始化)' : '(手动开启)');
+    // console.log('开启翻译功能', isInitialization ? '(初始化)' : '(手动开启)');
     
     if (!this.translationTooltip) {
-      console.error('翻译工具实例不存在');
+      // console.error('翻译工具实例不存在');
       this.showNotification('翻译工具未初始化', 'error');
       return;
     }
@@ -616,10 +616,10 @@ class FloatingBallTranslator {
       
       // 非初始化的时候，开启翻译工具，则执行该方法
       if (!isInitialization) {
-        console.log('非初始化开启翻译，执行iframe检测');
+        // console.log('非初始化开启翻译，执行iframe检测');
         this.detectAndBindAllIframes();
       } else {
-        console.log('初始化开启翻译，跳过iframe检测');
+        // console.log('初始化开启翻译，跳过iframe检测');
       }
       
       // 更新状态
@@ -636,9 +636,9 @@ class FloatingBallTranslator {
         this.enableIframeTranslation();
       }
       
-      console.log('翻译功能开启成功');
+      // console.log('翻译功能开启成功');
     } catch (error) {
-      console.error('开启翻译功能失败:', error);
+      // console.error('开启翻译功能失败:', error);
       this.showNotification('开启翻译功能失败', 'error');
     }
   }
@@ -647,7 +647,7 @@ class FloatingBallTranslator {
    * 关闭翻译功能
    */
   disableTranslation() {
-    console.log('关闭翻译功能');
+    // console.log('关闭翻译功能');
     
     try {
       // 解绑翻译事件
@@ -672,9 +672,9 @@ class FloatingBallTranslator {
         this.disableIframeTranslation();
       }
       
-      console.log('翻译功能关闭成功');
+      // console.log('翻译功能关闭成功');
     } catch (error) {
-      console.error('关闭翻译功能失败:', error);
+      // console.error('关闭翻译功能失败:', error);
       this.showNotification('关闭翻译功能失败', 'error');
     }
   }
@@ -684,19 +684,19 @@ class FloatingBallTranslator {
    * 复用content.js中的事件绑定逻辑
    */
   bindTranslationEvents() {
-    console.log('绑定翻译事件');
+    // console.log('绑定翻译事件');
     
     if (!this.translationTooltip) {
-      console.error('翻译工具实例不存在');
+      // console.error('翻译工具实例不存在');
       return;
     }
     
     // 复用TranslationTooltip的bindEvents方法
     if (typeof this.translationTooltip.bindEvents === 'function') {
       this.translationTooltip.bindEvents();
-      console.log('翻译事件绑定完成');
+      // console.log('翻译事件绑定完成');
     } else {
-      console.error('TranslationTooltip.bindEvents方法不存在');
+      // console.error('TranslationTooltip.bindEvents方法不存在');
     }
   }
 
@@ -704,14 +704,14 @@ class FloatingBallTranslator {
    * 解绑翻译事件
    */
   unbindTranslationEvents() {
-    console.log('解绑翻译事件');
+    // console.log('解绑翻译事件');
     
     // 移除事件监听器
     document.removeEventListener('mouseover', this.translationTooltip.handleMouseOver);
     document.removeEventListener('mouseout', this.translationTooltip.handleMouseOut);
     document.removeEventListener('scroll', this.translationTooltip.handleScroll);
     
-    console.log('翻译事件解绑完成');
+    // console.log('翻译事件解绑完成');
   }
 
   /**
@@ -719,15 +719,15 @@ class FloatingBallTranslator {
    * 调用TranslationTooltip的iframeHandler来检测所有未缓存的iframe
    */
   detectAndBindAllIframes() {
-    console.log('检测并绑定所有iframe的嵌套iframe事件');
+    // console.log('检测并绑定所有iframe的嵌套iframe事件');
     
     if (!this.translationTooltip) {
-      console.warn('翻译工具实例不存在，跳过iframe检测');
+      // console.warn('翻译工具实例不存在，跳过iframe检测');
       return;
     }
     
     if (!this.translationTooltip.iframeHandler) {
-      console.warn('iframe处理器不存在，尝试重新初始化');
+      // console.warn('iframe处理器不存在，尝试重新初始化');
       this.retryIframeHandlerInitialization();
       return;
     }
@@ -736,9 +736,9 @@ class FloatingBallTranslator {
       // 调用iframeHandler的detectAndBindAllIframes方法
       // 这个方法会检测页面中所有的iframe，并为未在缓存中的iframe绑定事件
       this.translationTooltip.iframeHandler.detectAndBindAllIframes();
-      console.log('iframe嵌套检测完成');
+      // console.log('iframe嵌套检测完成');
     } catch (error) {
-      console.error('检测iframe嵌套时出错:', error);
+      // console.error('检测iframe嵌套时出错:', error);
       // 尝试重新初始化iframeHandler
       this.retryIframeHandlerInitialization();
     }
@@ -748,23 +748,23 @@ class FloatingBallTranslator {
    * 重试iframeHandler初始化
    */
   retryIframeHandlerInitialization() {
-    console.log('尝试重新初始化iframeHandler');
+    // console.log('尝试重新初始化iframeHandler');
     
     try {
       // 检查IframeHandler类是否可用
       if (typeof IframeHandler !== 'undefined') {
         this.translationTooltip.iframeHandler = new IframeHandler(this.translationTooltip);
-        console.log('iframeHandler重新初始化成功');
+        // console.log('iframeHandler重新初始化成功');
         
         // 重新尝试检测iframe
         setTimeout(() => {
           this.detectAndBindAllIframes();
         }, 1000);
       } else {
-        console.error('IframeHandler类不可用，无法重新初始化');
+        // console.error('IframeHandler类不可用，无法重新初始化');
       }
     } catch (error) {
-      console.error('重新初始化iframeHandler失败:', error);
+      // console.error('重新初始化iframeHandler失败:', error);
     }
   }
 
@@ -772,10 +772,10 @@ class FloatingBallTranslator {
    * 在iframe中开启翻译功能
    */
   enableIframeTranslation() {
-    console.log('在iframe中开启翻译功能');
+    // console.log('在iframe中开启翻译功能');
     
     if (!this.currentIframeContext) {
-      console.warn('没有iframe上下文，无法在iframe中开启翻译');
+      // console.warn('没有iframe上下文，无法在iframe中开启翻译');
       return;
     }
 
@@ -786,14 +786,14 @@ class FloatingBallTranslator {
       if (iframeWindow.translationTooltip) {
         // 如果iframe已有翻译工具，直接开启
         iframeWindow.translationTooltip.isTranslationEnabled = true;
-        console.log('iframe翻译功能已开启');
+        // console.log('iframe翻译功能已开启');
       } else {
         // 如果iframe没有翻译工具，尝试创建
-        console.log('iframe中没有翻译工具，尝试创建');
+        // console.log('iframe中没有翻译工具，尝试创建');
         // 这里可以添加创建iframe翻译工具的逻辑
       }
     } catch (error) {
-      console.error('在iframe中开启翻译功能失败:', error);
+      // console.error('在iframe中开启翻译功能失败:', error);
     }
   }
 
@@ -801,10 +801,10 @@ class FloatingBallTranslator {
    * 在iframe中关闭翻译功能
    */
   disableIframeTranslation() {
-    console.log('在iframe中关闭翻译功能');
+    // console.log('在iframe中关闭翻译功能');
     
     if (!this.currentIframeContext) {
-      console.warn('没有iframe上下文，无法在iframe中关闭翻译');
+      // console.warn('没有iframe上下文，无法在iframe中关闭翻译');
       return;
     }
 
@@ -816,10 +816,10 @@ class FloatingBallTranslator {
         // 关闭iframe翻译功能
         iframeWindow.translationTooltip.isTranslationEnabled = false;
         iframeWindow.translationTooltip.hideTooltip();
-        console.log('iframe翻译功能已关闭');
+        // console.log('iframe翻译功能已关闭');
       }
     } catch (error) {
-      console.error('在iframe中关闭翻译功能失败:', error);
+      // console.error('在iframe中关闭翻译功能失败:', error);
     }
   }
 
@@ -828,10 +828,10 @@ class FloatingBallTranslator {
    * 重新检查嵌套的iframe并绑定事件
    */
   updateTranslation() {
-    console.log('开始更新翻译功能');
+    // console.log('开始更新翻译功能');
     
     if (!this.translationTooltip) {
-      console.error('翻译工具实例不存在');
+      // console.error('翻译工具实例不存在');
       this.showNotification('翻译工具未初始化', 'error');
       return;
     }
@@ -854,9 +854,9 @@ class FloatingBallTranslator {
       // 4. 显示更新完成通知
       this.showNotification('翻译功能更新完成', 'success');
       
-      console.log('翻译功能更新完成');
+      // console.log('翻译功能更新完成');
     } catch (error) {
-      console.error('更新翻译功能失败:', error);
+      // console.error('更新翻译功能失败:', error);
       this.showNotification('更新翻译功能失败', 'error');
     }
   }
@@ -866,10 +866,10 @@ class FloatingBallTranslator {
    * 只清理不存在的iframe，保留仍然存在的iframe缓存
    */
   clearIframeCache() {
-    console.log('清理不存在的iframe缓存');
+    // console.log('清理不存在的iframe缓存');
     
     if (!this.translationTooltip || !this.translationTooltip.iframeHandler) {
-      console.warn('iframe处理器不存在，跳过缓存清理');
+      // console.warn('iframe处理器不存在，跳过缓存清理');
       return;
     }
     
@@ -877,14 +877,14 @@ class FloatingBallTranslator {
       const cache = this.translationTooltip.iframeHandler.getCache();
       if (cache && typeof cache.cleanupRemovedIframes === 'function') {
         const cleanedCount = cache.cleanupRemovedIframes(document);
-        console.log(`已清理 ${cleanedCount} 个不存在的iframe缓存`);
+        // console.log(`已清理 ${cleanedCount} 个不存在的iframe缓存`);
       } else {
-        console.warn('缓存清理方法不可用，尝试使用备用方法');
+        // console.warn('缓存清理方法不可用，尝试使用备用方法');
         // 备用方法：手动检查每个iframe是否仍然存在
         this.manualCleanupRemovedIframes();
       }
     } catch (error) {
-      console.error('清理iframe缓存失败:', error);
+      // console.error('清理iframe缓存失败:', error);
     }
   }
 
@@ -892,12 +892,12 @@ class FloatingBallTranslator {
    * 手动清理不存在的iframe缓存（备用方法）
    */
   manualCleanupRemovedIframes() {
-    console.log('使用手动方法清理不存在的iframe缓存');
+    // console.log('使用手动方法清理不存在的iframe缓存');
     
     try {
       const cache = this.translationTooltip.iframeHandler.getCache();
       if (!cache || !cache.getAllIframes) {
-        console.warn('无法获取缓存信息');
+        // console.warn('无法获取缓存信息');
         return;
       }
       
@@ -907,11 +907,11 @@ class FloatingBallTranslator {
       allIframes.forEach(iframe => {
         // 检查iframe是否仍然存在于DOM中
         if (!document.contains(iframe)) {
-          console.log('发现已移除的iframe:', {
-            src: iframe.src,
-            id: iframe.id,
-            className: iframe.className
-          });
+          // console.log('发现已移除的iframe:', {
+          //   src: iframe.src,
+          //   id: iframe.id,
+          //   className: iframe.className
+          // });
           
           // 清理这个iframe的事件
           this.translationTooltip.iframeHandler.cleanupIframeEvents(iframe);
@@ -919,9 +919,9 @@ class FloatingBallTranslator {
         }
       });
       
-      console.log(`手动清理完成，移除了 ${cleanedCount} 个iframe缓存`);
+      // console.log(`手动清理完成，移除了 ${cleanedCount} 个iframe缓存`);
     } catch (error) {
-      console.error('手动清理iframe缓存失败:', error);
+      // console.error('手动清理iframe缓存失败:', error);
     }
   }
 
@@ -929,10 +929,10 @@ class FloatingBallTranslator {
    * 刷新iframe检测
    */
   refreshIframeDetection() {
-    console.log('刷新iframe检测');
+    // console.log('刷新iframe检测');
     
     if (!this.translationTooltip || !this.translationTooltip.iframeHandler) {
-      console.warn('iframe处理器不存在，尝试重新初始化');
+      // console.warn('iframe处理器不存在，尝试重新初始化');
       this.retryIframeHandlerInitialization();
       return;
     }
@@ -941,9 +941,9 @@ class FloatingBallTranslator {
       // 调用iframeHandler的detectAndBindAllIframes方法
       // 这会重新检测页面中所有的iframe，并为未在缓存中的iframe绑定事件
       this.translationTooltip.iframeHandler.detectAndBindAllIframes();
-      console.log('iframe检测刷新完成');
+      // console.log('iframe检测刷新完成');
     } catch (error) {
-      console.error('刷新iframe检测失败:', error);
+      // console.error('刷新iframe检测失败:', error);
       // 尝试重新初始化iframeHandler
       this.retryIframeHandlerInitialization();
     }
@@ -953,7 +953,7 @@ class FloatingBallTranslator {
    * 重新绑定翻译事件
    */
   rebindTranslationEvents() {
-    console.log('重新绑定翻译事件');
+    // console.log('重新绑定翻译事件');
     
     try {
       // 先解绑现有事件
@@ -962,9 +962,9 @@ class FloatingBallTranslator {
       // 重新绑定事件
       this.bindTranslationEvents();
       
-      console.log('翻译事件重新绑定完成');
+      // console.log('翻译事件重新绑定完成');
     } catch (error) {
-      console.error('重新绑定翻译事件失败:', error);
+      // console.error('重新绑定翻译事件失败:', error);
     }
   }
 
@@ -998,7 +998,7 @@ class FloatingBallTranslator {
    * @param {string} type - 通知类型 (success, error, info, warning)
    */
   showNotification(message, type = 'info') {
-    console.log(`通知 [${type}]:`, message);
+    // console.log(`通知 [${type}]:`, message);
     
     // 创建通知元素
     const notification = document.createElement('div');
@@ -1065,9 +1065,9 @@ class FloatingBallTranslator {
       };
       
       localStorage.setItem('translation-tooltip-state', JSON.stringify(state));
-      console.log('翻译状态已保存:', state);
+      // console.log('翻译状态已保存:', state);
     } catch (error) {
-      console.error('保存翻译状态失败:', error);
+      // console.error('保存翻译状态失败:', error);
     }
   }
 
@@ -1083,23 +1083,23 @@ class FloatingBallTranslator {
         // 检查是否是同一个页面
         if (state.url === window.location.href) {
           this.isTranslationEnabled = state.isTranslationEnabled;
-          console.log('翻译状态已加载:', state);
+          // console.log('翻译状态已加载:', state);
           
           // 如果之前是开启状态，自动开启翻译（初始化模式）
           if (this.isTranslationEnabled) {
-            console.log('自动开启翻译功能（初始化模式）');
+            // console.log('自动开启翻译功能（初始化模式）');
             this.enableTranslation(true); // 传入true表示这是初始化时的自动开启
           }
         } else {
-          console.log('不同页面，重置翻译状态');
+          // console.log('不同页面，重置翻译状态');
           this.isTranslationEnabled = false;
         }
       } else {
-        console.log('未找到保存的翻译状态');
+        // console.log('未找到保存的翻译状态');
         this.isTranslationEnabled = false;
       }
     } catch (error) {
-      console.error('加载翻译状态失败:', error);
+      // console.error('加载翻译状态失败:', error);
       this.isTranslationEnabled = false;
     }
   }
@@ -1116,7 +1116,7 @@ class FloatingBallTranslator {
    * 销毁实例
    */
   destroy() {
-    console.log('销毁悬浮球翻译功能');
+    // console.log('销毁悬浮球翻译功能');
     
     // 解绑事件
     this.unbindTranslationEvents();
@@ -1133,7 +1133,7 @@ class FloatingBallTranslator {
     this.expandedMenu = null;
     this.menuItems = [];
     
-    console.log('悬浮球翻译功能已销毁');
+    // console.log('悬浮球翻译功能已销毁');
   }
 }
 
@@ -1141,10 +1141,10 @@ class FloatingBallTranslator {
 // 确保页面加载完成后初始化
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM加载完成，初始化悬浮球翻译功能');
+    // console.log('DOM加载完成，初始化悬浮球翻译功能');
     window.floatingBallTranslator = new FloatingBallTranslator();
   });
 } else {
-  console.log('DOM已加载，直接初始化悬浮球翻译功能');
+  // console.log('DOM已加载，直接初始化悬浮球翻译功能');
   window.floatingBallTranslator = new FloatingBallTranslator();
 }

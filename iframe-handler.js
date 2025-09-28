@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-09-25 16:55:21
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-28 17:03:55
+ * @LastEditTime: 2025-09-28 17:26:08
  * @FilePath: /transition-extension/iframe-handler.js
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -231,7 +231,7 @@ class IframeHandler {
       }
       
       // 为iframe创建独立的弹窗检测器
-      this.initIframePopupDetector(iframeElement, iframeDocument, iframeWindow);
+    //   this.initIframePopupDetector(iframeElement, iframeDocument, iframeWindow);
       
     //   console.log('开始绑定iframe内部事件监听器');
       

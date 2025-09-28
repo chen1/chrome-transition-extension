@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-09-25 16:55:21
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-28 17:15:37
+ * @LastEditTime: 2025-09-28 17:37:34
  * @FilePath: /transition-extension/content.js
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -38,13 +38,13 @@ class TranslationTooltip {
       this.bindEvents();
       
       // 主动检测并绑定iframe事件
-      if (this.iframeHandler) {
-        // console.log('开始主动检测iframe...');
-        // this.iframeHandler.detectAndBindAllIframes();
+    //   if (this.iframeHandler) {
+    //     // console.log('开始主动检测iframe...');
+    //     // this.iframeHandler.detectAndBindAllIframes();
         
-        // 延迟检测，处理动态加载的iframe（只检测一次，避免重复）
-        this.iframeHandler.delayedDetectIframes(3000);
-      }
+    //     // 延迟检测，处理动态加载的iframe（只检测一次，避免重复）
+    //     this.iframeHandler.delayedDetectIframes(3000);
+    //   }
       
       // console.log('翻译工具提示初始化完成');
       // console.log('最终状态检查:');
@@ -450,6 +450,15 @@ class TranslationTooltip {
    * 避免重复检测，分别处理弹窗内和页面中的iframe
    */
   smartHybridIframeDetection() {
+    if (this.iframeHandler) {
+        // console.log('开始主动检测iframe...');
+        // this.iframeHandler.detectAndBindAllIframes();
+        
+        // 延迟检测，处理动态加载的iframe（只检测一次，避免重复）
+        this.iframeHandler.delayedDetectIframes(3000);
+        return;
+
+    }
     console.log('=== 开始智能混合iframe检测 ===');
     
     // 1. 首先使用轻量级检测器处理弹窗内的iframe
@@ -459,6 +468,7 @@ class TranslationTooltip {
     // 2. 然后检测页面中非弹窗区域的iframe
     console.log('步骤2: 检测非弹窗区域iframe');
     this.detectNonPopupIframes(); //非弹窗iframe检测通过
+    
     
     console.log('=== 智能混合iframe检测完成 ===');
   }
