@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-09-30 15:20:00
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-30 15:47:53
+ * @LastEditTime: 2025-09-30 16:12:05
  * @FilePath: /transition-extension/unified-translation-processor.js
  * @Description: 统一的翻译处理器，整合简单翻译和文本段翻译逻辑
  */
@@ -458,6 +458,125 @@ class UnifiedTranslationProcessor {
     
     return false;
   }
+  
+  isFrameworkComponent(element) {
+    const tagName = element.tagName.toLowerCase();
+    
+    // Vue组件检测
+    if (this.isVueComponent(element, tagName)) {
+      return true;
+    }
+    
+    // Angular组件检测
+    if (this.isAngularComponent(element, tagName)) {
+      return true;
+    }
+    
+    // 通用自定义元素检测（包含连字符的标签名）
+    if (tagName.includes('-') && element.textContent && element.textContent.trim()) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  isVueComponent(element, tagName) {
+    // Vue组件特征检测
+    return (
+      // Vue自定义标签（包含连字符）
+      tagName.includes('-') ||
+      // Vue指令属性
+      Array.from(element.attributes || []).some(attr => 
+        attr.name.startsWith('v-') || 
+        attr.name.startsWith(':') || 
+        attr.name.startsWith('@') ||
+        attr.name.startsWith('data-v-')
+      ) ||
+      // Vue实例标识
+      element.__vue__ ||
+      element._vnode ||
+      // Vue 3 特征
+      element.__vueParentComponent
+    );
+  }
+
+  isAngularComponent(element, tagName) {
+    // Angular组件特征检测
+    return (
+      // Angular自定义标签
+      tagName.includes('-') ||
+      // Angular指令属性
+      Array.from(element.attributes || []).some(attr => 
+        attr.name.startsWith('ng-') || 
+        attr.name.startsWith('*ng') ||
+        attr.name.startsWith('[') ||
+        attr.name.startsWith('(') ||
+        attr.name.includes('angular')
+      ) ||
+      // Angular调试信息
+      element.ng ||
+      element.__ngContext__ ||
+      // Angular元素类名
+      element.className && element.className.includes('ng-')
+    );
+  }
+
+  extractFrameworkComponentText(element) {
+    let text = '';
+    
+    // 1. 尝试获取组件的文本内容
+    if (element.textContent && element.textContent.trim()) {
+      text = element.textContent.trim();
+    }
+    
+    // 2. 检查Vue特定属性
+    if (!text && element.getAttribute) {
+      text = element.getAttribute('v-text') || 
+             element.getAttribute(':text') ||
+             element.getAttribute('v-html') ||
+             '';
+    }
+    
+    // 3. 检查Angular特定属性
+    if (!text && element.getAttribute) {
+      text = element.getAttribute('[innerText]') ||
+             element.getAttribute('[innerHTML]') ||
+             element.getAttribute('ng-bind') ||
+             '';
+    }
+    
+    // 4. 检查aria-label（常用于无障碍）
+    if (!text && element.getAttribute) {
+      text = element.getAttribute('aria-label') || '';
+    }
+    
+    return text.trim();
+  }
+
+  extractAttributeText(element) {
+    // 按优先级提取属性文本
+    const attributes = [
+      'title',
+      'alt', 
+      'placeholder',
+      'aria-label',
+      'data-title',
+      'data-tooltip',
+      'data-original-title', // Bootstrap tooltip
+      'tooltip', // 自定义tooltip属性
+      'label'
+    ];
+    
+    for (const attr of attributes) {
+      const value = element.getAttribute(attr);
+      if (value && value.trim()) {
+        return value.trim();
+      }
+    }
+    
+    return '';
+  }
+
 }
 
 // 导出模块
