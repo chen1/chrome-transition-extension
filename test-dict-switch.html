@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>字典切换功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .test-text {
+            margin: 10px 0;
+            padding: 8px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .instructions {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .dict-info {
+            background-color: #fff3cd;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>字典切换功能测试页面</h1>
+    
+    <div class="instructions">
+        <h3>测试说明：</h3>
+        <ol>
+            <li>页面右下角应该有一个悬浮球翻译工具</li>
+            <li>鼠标悬停在悬浮球上会显示操作菜单</li>
+            <li>菜单中应该有"切换字典"选项，点击可以看到子菜单</li>
+            <li>子菜单显示三个字典选项：HIS字典、EMR字典、RIS字典</li>
+            <li>当前选中的字典会有高亮显示和勾选标记</li>
+            <li>切换字典后会显示成功提示</li>
+            <li>鼠标悬停在下面的测试文本上，应该显示对应字典的翻译</li>
+        </ol>
+    </div>
+
+    <div class="dict-info">
+        <h4>字典信息：</h4>
+        <ul>
+            <li><strong>HIS字典</strong>：医院信息系统相关术语，约43000+条目</li>
+            <li><strong>EMR字典</strong>：电子病历系统相关术语，约4000条目</li>
+            <li><strong>RIS字典</strong>：放射信息系统相关术语，约3500条目</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>HIS字典测试文本：</h3>
+        <div class="test-text">Patient</div>
+        <div class="test-text">Doctor</div>
+        <div class="test-text">Hospital</div>
+        <div class="test-text">Medical Record</div>
+        <div class="test-text">Prescription</div>
+    </div>
+
+    <div class="test-section">
+        <h3>EMR字典测试文本：</h3>
+        <div class="test-text">Initial Visit</div>
+        <div class="test-text">Follow-Up Visit</div>
+        <div class="test-text">Diagnosis</div>
+        <div class="test-text">Treatment Plan</div>
+        <div class="test-text">Discharge Summary</div>
+    </div>
+
+    <div class="test-section">
+        <h3>RIS字典测试文本：</h3>
+        <div class="test-text">X-Ray</div>
+        <div class="test-text">CT Scan</div>
+        <div class="test-text">MRI</div>
+        <div class="test-text">Ultrasound</div>
+        <div class="test-text">Radiology Report</div>
+    </div>
+
+    <div class="test-section">
+        <h3>通用测试文本：</h3>
+        <div class="test-text">Save</div>
+        <div class="test-text">Cancel</div>
+        <div class="test-text">Submit</div>
+        <div class="test-text">Delete</div>
+        <div class="test-text">Edit</div>
+    </div>
+
+    <script>
+        // 页面加载完成后的调试信息
+        window.addEventListener('load', function() {
+            console.log('测试页面加载完成');
+            console.log('当前URL:', window.location.href);
+            
+            // 检查翻译工具是否加载
+            setTimeout(() => {
+                console.log('翻译工具检查:');
+                console.log('- translationTooltip存在:', !!window.translationTooltip);
+                console.log('- floatingBallTranslator存在:', !!window.floatingBallTranslator);
+                
+                if (window.floatingBallTranslator) {
+                    console.log('- 当前字典:', window.floatingBallTranslator.currentDictionary);
+                    console.log('- 可用字典:', window.floatingBallTranslator.availableDictionaries);
+                }
+                
+                if (window.translationTooltip) {
+                    console.log('- 字典条目数:', Object.keys(window.translationTooltip.translationDict).length);
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

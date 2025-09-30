@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-01-27 10:00:00
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-29 16:44:12
+ * @LastEditTime: 2025-09-30 18:59:32
  * @FilePath: /transition-extension/floating-ball-translator.js
  * @Description: 悬浮球翻译功能控制器 - 独立文件实现
  */
@@ -17,6 +17,14 @@ class FloatingBallTranslator {
     this.isDragging = false; // 是否正在拖拽
     this.dragOffset = { x: 0, y: 0 }; // 拖拽偏移量
     this.hideMenuTimeout = null; // 隐藏菜单的延迟定时器
+    
+    // 字典相关属性
+    this.availableDictionaries = [
+      { key: 'his-dict', name: 'HIS字典', file: 'dict/his-dict.json' },
+      { key: 'emr-dict', name: 'EMR字典', file: 'dict/emr-dict.json' },
+      { key: 'ris-dict', name: 'RIS字典', file: 'dict/ris-dict.json' }
+    ];
+    this.currentDictionary = 'his-dict'; // 默认字典
     
     this.init();
   }
@@ -212,6 +220,12 @@ class FloatingBallTranslator {
     // 添加分隔线
     this.createSeparator();
 
+    // 添加切换字典菜单项
+    this.createDictionarySubmenu();
+
+    // 添加分隔线
+    this.createSeparator();
+
     this.createMenuItem('关于翻译工具', 'about-translation', () => {
       this.showAboutInfo();
     });
@@ -275,6 +289,149 @@ class FloatingBallTranslator {
       margin: 4px 0;
     `;
     this.expandedMenu.appendChild(separator);
+  }
+
+  /**
+   * 创建字典切换子菜单
+   */
+  createDictionarySubmenu() {
+    // 创建字典菜单容器
+    const dictMenuContainer = document.createElement('div');
+    dictMenuContainer.className = 'translation-dict-menu-container';
+    dictMenuContainer.style.cssText = `
+      position: relative;
+    `;
+
+    // 创建字典菜单主项
+    const dictMainItem = document.createElement('div');
+    dictMainItem.className = 'translation-menu-item translation-dict-main-item';
+    dictMainItem.textContent = '切换字典 ▶';
+    dictMainItem.style.cssText = `
+      padding: 8px 16px;
+      cursor: pointer;
+      color: #333;
+      transition: background-color 0.2s ease;
+      position: relative;
+    `;
+
+    // 创建字典子菜单
+    const dictSubmenu = document.createElement('div');
+    dictSubmenu.className = 'translation-dict-submenu';
+    dictSubmenu.style.cssText = `
+      position: absolute;
+      left: 0;
+      transform: translateX(60%);
+      top: -5px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      padding: 8px 0;
+      min-width: 150px;
+      display: block;
+      z-index: 1000001;
+      white-space: nowrap;
+    `;
+
+    // 为每个字典创建菜单项
+    this.availableDictionaries.forEach(dict => {
+      const dictItem = document.createElement('div');
+      dictItem.className = 'translation-menu-item translation-dict-item';
+      dictItem.textContent = dict.name;
+      dictItem.dataset.dictKey = dict.key;
+      dictItem.style.cssText = `
+        padding: 8px 16px;
+        cursor: pointer;
+        color: #333;
+        transition: background-color 0.2s ease;
+        position: relative;
+      `;
+
+      // 如果是当前字典，添加选中标识
+      if (dict.key === this.currentDictionary) {
+        dictItem.style.backgroundColor = '#e3f2fd';
+        dictItem.style.fontWeight = 'bold';
+        dictItem.textContent += ' ✓';
+      }
+
+      // 悬停效果
+      dictItem.addEventListener('mouseenter', () => {
+        if (dict.key !== this.currentDictionary) {
+          dictItem.style.backgroundColor = '#f5f5f5';
+        }
+      });
+
+      dictItem.addEventListener('mouseleave', () => {
+        if (dict.key !== this.currentDictionary) {
+          dictItem.style.backgroundColor = 'transparent';
+        }
+      });
+
+      // 点击切换字典
+      dictItem.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.switchDictionary(dict.key);
+        this.hideExpandedMenu();
+      });
+
+      dictSubmenu.appendChild(dictItem);
+    });
+
+    // 主菜单项悬停效果
+    
+    dictMainItem.addEventListener('mouseenter', (event) => {
+      dictMainItem.style.backgroundColor = '#f5f5f5';
+      this.showDictSubmenu(dictSubmenu, dictMainItem);
+      // 清除任何待执行的隐藏定时器
+      if (dictMainItem._hideTimer) {
+        clearTimeout(dictMainItem._hideTimer);
+        dictMainItem._hideTimer = null;
+      }
+      if (dictSubmenu._hideTimer) {
+        clearTimeout(dictSubmenu._hideTimer);
+        dictSubmenu._hideTimer = null;
+      }
+    });
+    // dictMainItem.removeEventListener('mouseout','*');
+    // dictMainItem.removeEventListener('mouseleave','*');
+    dictMainItem.addEventListener('mouseleave', (event) => {
+      dictMainItem.style.backgroundColor = 'transparent';
+      if((event.toElement === dictSubmenu ||(event.toElement && event.toElement==dictMainItem))) {
+        return;
+      }
+      // 延迟隐藏子菜单，给用户时间移动到子菜单
+      dictMainItem._hideTimer = setTimeout(() => {
+        if (!dictSubmenu.matches(':hover')) {
+          dictSubmenu.style.display = 'none';
+        }
+      }, 200);
+    });
+
+    // 子菜单悬停时保持显示
+    // dictSubmenu.addEventListener('mouseenter', () => {
+    //   dictSubmenu.style.display = 'block';
+    //   dictSubmenu.style.visibility = 'visible';
+    //   // 清除任何待执行的隐藏定时器
+    //   if (dictSubmenu._hideTimer) {
+    //     clearTimeout(dictSubmenu._hideTimer);
+    //     dictSubmenu._hideTimer = null;
+    //   }
+    // });
+
+    // dictSubmenu.addEventListener('mouseleave', () => {
+    //   // 延迟隐藏子菜单，给用户时间移回主菜单项
+    //   dictSubmenu._hideTimer = setTimeout(() => {
+    //     // 检查鼠标是否在主菜单项上
+    //     if (!dictMainItem.matches(':hover')) {
+    //       dictSubmenu.style.display = 'none';
+    //       dictSubmenu.style.visibility = 'visible'; // 重置visibility
+    //     }
+    //   }, 200);
+    // });
+
+    dictMainItem.appendChild(dictSubmenu);
+    dictMenuContainer.appendChild(dictMainItem);
+    this.expandedMenu.appendChild(dictMenuContainer);
   }
 
   /**
@@ -382,10 +539,10 @@ class FloatingBallTranslator {
     });
 
     // 鼠标离开包装容器时延迟隐藏菜单
-    this.floatingBall.addEventListener('mouseout', () => {
-      // console.log('鼠标离开包装容器，延迟隐藏菜单');
-      this.scheduleHideMenu();
-    });
+    // this.floatingBall.addEventListener('mouseleave', () => {
+    //   // console.log('鼠标离开包装容器，延迟隐藏菜单');
+    //   this.scheduleHideMenu();
+    // });
   }
 
   /**
@@ -1018,12 +1175,17 @@ class FloatingBallTranslator {
    * 显示关于信息
    */
   showAboutInfo() {
+    const currentDict = this.getCurrentDictionaryInfo();
+    const dictSize = this.translationTooltip ? Object.keys(this.translationTooltip.translationDict).length : 0;
+    
     const aboutInfo = `
 翻译工具信息:
 - 版本: 1.0.0
 - 功能: 鼠标悬浮显示中文翻译
 - 状态: ${this.isTranslationEnabled ? '已开启' : '已关闭'}
-- 字典条目: ${this.translationTooltip ? Object.keys(this.translationTooltip.translationDict).length : '未知'}
+- 当前字典: ${currentDict.name}
+- 字典条目: ${dictSize}个
+- 可用字典: ${this.availableDictionaries.map(d => d.name).join(', ')}
     `.trim();
     
     this.showNotification(aboutInfo, 'info');
@@ -1097,6 +1259,7 @@ class FloatingBallTranslator {
     try {
       const state = {
         isTranslationEnabled: this.isTranslationEnabled,
+        currentDictionary: this.currentDictionary,
         timestamp: new Date().toISOString(),
         url: window.location.href
       };
@@ -1120,6 +1283,10 @@ class FloatingBallTranslator {
         // 检查是否是同一个页面
         if (state.url === window.location.href) {
           this.isTranslationEnabled = state.isTranslationEnabled;
+          // 加载保存的字典设置
+          if (state.currentDictionary) {
+            this.currentDictionary = state.currentDictionary;
+          }
           // console.log('翻译状态已加载:', state);
           
           // 如果之前是开启状态，自动开启翻译（初始化模式）
@@ -1129,15 +1296,15 @@ class FloatingBallTranslator {
           }
         } else {
           // console.log('不同页面，重置翻译状态');
-          this.isTranslationEnabled = false;
+        //   this.isTranslationEnabled = false;
         }
       } else {
         // console.log('未找到保存的翻译状态');
-        this.isTranslationEnabled = false;
+        // this.isTranslationEnabled = false;
       }
     } catch (error) {
       // console.error('加载翻译状态失败:', error);
-      this.isTranslationEnabled = false;
+    //   this.isTranslationEnabled = false;
     }
   }
 
@@ -1147,6 +1314,168 @@ class FloatingBallTranslator {
    */
   getTranslationState() {
     return this.isTranslationEnabled;
+  }
+
+  /**
+   * 切换字典
+   * @param {string} dictKey - 字典键值
+   */
+  async switchDictionary(dictKey) {
+    console.log('切换字典到:', dictKey);
+    
+    // 查找字典配置
+    const dictConfig = this.availableDictionaries.find(dict => dict.key === dictKey);
+    if (!dictConfig) {
+      this.showNotification('字典不存在', 'error');
+      return;
+    }
+    
+    // 如果是当前字典，不需要切换
+    if (dictKey === this.currentDictionary) {
+      this.showNotification(`已经是当前字典: ${dictConfig.name}`, 'info');
+      return;
+    }
+    
+    try {
+      // 显示加载提示
+      this.showNotification('正在切换字典...', 'info');
+      
+      // 加载新字典
+      const response = await fetch(chrome.runtime.getURL(dictConfig.file));
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const newDict = await response.json();
+      const dictSize = Object.keys(newDict).length;
+      
+      // 更新当前字典
+      this.currentDictionary = dictKey;
+      
+      // 更新翻译工具的字典
+      if (this.translationTooltip) {
+        // 使用content.js的更新方法
+        if (typeof this.translationTooltip.updateTranslationDict === 'function') {
+          this.translationTooltip.updateTranslationDict(newDict);
+        } else {
+          // 如果没有更新方法，直接设置
+          this.translationTooltip.translationDict = newDict;
+          
+          // 更新翻译服务的字典
+          if (this.translationTooltip.translationService) {
+            this.translationTooltip.translationService.setTranslationDict(newDict);
+          }
+          
+          // 更新文本段翻译器的字典
+          if (this.translationTooltip.textSegmentTranslator) {
+            this.translationTooltip.textSegmentTranslator.translationDict = newDict;
+          }
+        }
+        
+        // 更新iframe处理器中的字典
+        this.updateIframeHandlerDictionary(newDict);
+      }
+      
+      // 保存状态
+      this.saveTranslationState();
+      
+      // 更新菜单显示
+      this.updateDictionaryMenuDisplay();
+      
+      // 显示成功提示
+      this.showNotification(`字典切换成功: ${dictConfig.name} (${dictSize}个条目)`, 'success');
+      
+      console.log(`字典切换完成: ${dictConfig.name}, 条目数: ${dictSize}`);
+      
+    } catch (error) {
+      console.error('切换字典失败:', error);
+      this.showNotification(`切换字典失败: ${error.message}`, 'error');
+    }
+  }
+  
+  /**
+   * 更新iframe处理器中的字典
+   * @param {Object} newDict - 新字典
+   */
+  updateIframeHandlerDictionary(newDict) {
+    if (!this.translationTooltip || !this.translationTooltip.iframeHandler) {
+      return;
+    }
+    
+    try {
+      // 更新iframe处理器的统一翻译处理器字典
+      if (this.translationTooltip.iframeHandler.unifiedTranslationProcessor) {
+        // 统一翻译处理器会通过translationTooltip获取字典，所以不需要单独设置
+        console.log('iframe处理器字典已通过统一翻译处理器更新');
+      }
+      
+      // 通知所有已绑定的iframe更新字典
+      const cache = this.translationTooltip.iframeHandler.getCache();
+      if (cache && cache.getAllIframes) {
+        const allIframes = cache.getAllIframes();
+        allIframes.forEach(iframe => {
+          try {
+            const iframeWindow = iframe.contentWindow;
+            if (iframeWindow && iframeWindow.translationTooltip) {
+              iframeWindow.translationTooltip.translationDict = newDict;
+              if (iframeWindow.translationTooltip.translationService) {
+                iframeWindow.translationTooltip.translationService.setTranslationDict(newDict);
+              }
+              if (iframeWindow.translationTooltip.textSegmentTranslator) {
+                iframeWindow.translationTooltip.textSegmentTranslator.translationDict = newDict;
+              }
+            }
+          } catch (error) {
+            // 跨域iframe无法访问，忽略错误
+            console.log('无法更新跨域iframe字典:', iframe.src);
+          }
+        });
+      }
+      
+    } catch (error) {
+      console.error('更新iframe处理器字典失败:', error);
+    }
+  }
+  
+  /**
+   * 更新字典菜单显示
+   */
+  updateDictionaryMenuDisplay() {
+    const dictItems = document.querySelectorAll('.translation-dict-item');
+    dictItems.forEach(item => {
+      const dictKey = item.dataset.dictKey;
+      const dictConfig = this.availableDictionaries.find(dict => dict.key === dictKey);
+      
+      if (dictKey === this.currentDictionary) {
+        // 当前选中的字典
+        item.style.backgroundColor = '#e3f2fd';
+        item.style.fontWeight = 'bold';
+        item.textContent = dictConfig.name + ' ✓';
+      } else {
+        // 未选中的字典
+        item.style.backgroundColor = 'transparent';
+        item.style.fontWeight = 'normal';
+        item.textContent = dictConfig.name;
+      }
+    });
+  }
+  
+  /**
+   * 智能显示字典子菜单
+   * @param {Element} submenu - 子菜单元素
+   * @param {Element} mainItem - 主菜单项元素
+   */
+  showDictSubmenu(submenu, mainItem) {
+    // 直接显示子菜单，使用固定的left: -100%定位
+    submenu.style.display = 'block';
+  }
+
+  /**
+   * 获取当前字典信息
+   * @returns {Object} - 当前字典配置
+   */
+  getCurrentDictionaryInfo() {
+    return this.availableDictionaries.find(dict => dict.key === this.currentDictionary) || this.availableDictionaries[0];
   }
 
   /**

@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-09-25 16:55:21
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-30 16:11:42
+ * @LastEditTime: 2025-09-30 18:40:51
  * @FilePath: /transition-extension/content.js
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -192,9 +192,22 @@ class TranslationTooltip {
       // 智能选择字典：如果是测试页面，使用测试字典；否则使用正式字典
       const isTestPage = window.location.href.includes('test_translate.html') || 
                         window.location.href.includes('iframe_test_translate.html') ;
-                       
       
-      const dictFile = isTestPage ? 'test-dict.json' : 'dict/his-dict.json';
+      // 检查是否有悬浮球翻译器指定的字典
+      let dictFile = 'dict/his-dict.json'; // 默认字典
+      
+      if (isTestPage) {
+        dictFile = 'test-dict.json';
+      } else if (window.floatingBallTranslator && window.floatingBallTranslator.currentDictionary) {
+        // 如果悬浮球翻译器已经指定了字典，使用指定的字典
+        const dictConfig = window.floatingBallTranslator.availableDictionaries.find(
+          dict => dict.key === window.floatingBallTranslator.currentDictionary
+        );
+        if (dictConfig) {
+          dictFile = dictConfig.file;
+        }
+      }
+      
       // console.log(`检测到${isTestPage ? '测试' : '正式'}环境，使用字典: ${dictFile}`);
       
       const response = await fetch(chrome.runtime.getURL(dictFile));
@@ -862,6 +875,35 @@ class TranslationTooltip {
     }
 
     return null;
+  }
+
+  /**
+   * 更新翻译字典
+   * @param {Object} newDict - 新的翻译字典
+   */
+  updateTranslationDict(newDict) {
+    console.log('更新content.js翻译字典，新字典条目数:', Object.keys(newDict).length);
+    
+    // 更新主字典
+    this.translationDict = newDict;
+    
+    // 更新翻译服务的字典
+    if (this.translationService) {
+      this.translationService.setTranslationDict(newDict);
+    }
+    
+    // 更新文本段翻译器的字典
+    if (this.textSegmentTranslator) {
+      this.textSegmentTranslator.translationDict = newDict;
+    }
+    
+    // 更新统一翻译处理器的字典（通过translationTooltip引用）
+    if (this.unifiedTranslationProcessor) {
+      // 统一翻译处理器会通过this.translationTooltip获取字典，所以不需要单独设置
+      console.log('统一翻译处理器字典已通过translationTooltip更新');
+    }
+    
+    console.log('content.js翻译字典更新完成');
   }
 
   positionTooltip(event) {

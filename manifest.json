@@ -19,7 +19,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["dict/his-dict.json", "test-dict.json"],
+      "resources": ["dict/his-dict.json", "dict/emr-dict.json", "dict/ris-dict.json", "test-dict.json"],
       "matches": ["<all_urls>"]
     }
   ],

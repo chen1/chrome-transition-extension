@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-09-25 16:55:21
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-30 16:09:47
+ * @LastEditTime: 2025-09-30 18:42:03
  * @FilePath: /transition-extension/iframe-handler.js
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -265,7 +265,12 @@ class IframeHandler {
         // console.log('事件时间戳:', event.timeStamp);
         // console.log('iframe元素:', iframeElement);
         // console.log('translationTooltip存在:', !!this.translationTooltip);
-        
+            // 如果元素是#translation-floating-container或其后代元素，则直接返回
+        var element = event.target;
+        if (element.id==='translation-floating-container'||element.closest && element.closest('#translation-floating-container')) {
+            return;
+        }
+
         // 清除隐藏定时器，防止tooltip被意外隐藏
         if (this.translationTooltip.hideTimeout) {
           clearTimeout(this.translationTooltip.hideTimeout);
@@ -323,7 +328,10 @@ class IframeHandler {
       
       const iframeMouseOutHandler = (event) => {
         // console.log('=== iframe内部鼠标离开事件 ===');
-        
+        var element = event.target;
+        if (element.id==='translation-floating-container'||element.closest && element.closest('#translation-floating-container')) {
+            return;
+        }
         // 清除显示定时器
         if (this.translationTooltip.hoverTimeout) {
           clearTimeout(this.translationTooltip.hoverTimeout);
