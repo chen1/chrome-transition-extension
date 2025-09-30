@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-09-30 15:20:00
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-30 16:12:05
+ * @LastEditTime: 2025-09-30 16:24:14
  * @FilePath: /transition-extension/unified-translation-processor.js
  * @Description: 统一的翻译处理器，整合简单翻译和文本段翻译逻辑
  */
@@ -63,7 +63,7 @@ class UnifiedTranslationProcessor {
     const { context = 'main', iframeElement = null } = options;
     
     // 提取元素文本
-    const text = this.translationTooltip.extractElementText(element);
+    const text = this.extractElementText(element);
     // console.log(`${context}提取的文本:`, text);
     
     if (!text) {
@@ -458,7 +458,7 @@ class UnifiedTranslationProcessor {
     
     return false;
   }
-  
+
   isFrameworkComponent(element) {
     const tagName = element.tagName.toLowerCase();
     
@@ -520,7 +520,98 @@ class UnifiedTranslationProcessor {
       element.className && element.className.includes('ng-')
     );
   }
+extractElementText(element) {
+    // console.log('=== extractElementText 开始 ===');
+    // console.log('元素:', element);
+    // console.log('元素标签:', element.tagName);
+    // console.log('子节点数量:', element.childNodes.length);
+    // console.log('是否为支持的元素:', this.isSupportedElement(element));
+    
+    // 避免提取过长的文本
+    let text = '';
+    
+    // 1. 优先提取直接文本内容（元素直接包含的文本节点）
+    const directText = this.extractDirectTextContent(element);
+    if (directText) {
+      text = directText;
+      // console.log('方法1 - 直接文本内容:', text);
+    }
+    // 2. 如果元素只有一个文本子节点
+    else if (element.childNodes.length === 1 && element.childNodes[0].nodeType === Node.TEXT_NODE) {
+      text = element.childNodes[0].textContent.trim();
+      // console.log('方法2 - 单一文本节点:', text);
+    }
+    // 3. 如果元素本身有文本内容且没有子元素，直接使用
+    // else if (element.textContent && element.textContent.trim() && element.children.length === 0) {
+    //   text = element.textContent.trim();
+    //   // console.log('方法3 - 元素本身文本内容:', text);
+    // }
+    // 4. 标准HTML元素
+    // else if (element.tagName && this.isSupportedElement(element)) {
+    //   text = element.textContent.trim();
+    //   // console.log('方法4 - 标准HTML元素:', text);
+    // }
+    // 5. Vue/Angular自定义元素检测
+    // else if (this.isFrameworkComponent(element)) {
+    //   text = this.extractFrameworkComponentText(element);
+    //   // console.log('方法5 - 框架组件:', text);
+    // }
+    // 6. 属性文本提取
+    // else if (element.getAttribute) {
+    //   text = this.extractAttributeText(element);
+    //   // console.log('方法6 - 属性文本:', text);
+    // }
+    
+    // 7. 如果以上方法都没有提取到文本，尝试查找子元素中的文本
+    // if (!text && element.children && element.children.length > 0) {
+    //   // 查找第一个有文本内容的子元素
+    //   for (let child of element.children) {
+    //     if (this.isSupportedElement(child) && child.textContent.trim()) {
+    //       text = child.textContent.trim();
+    //       // console.log('方法7 - 子元素文本:', text);
+    //       break;
+    //     }
+    //   }
+    // }
+    
+    // 8. 最后尝试：如果元素本身有文本内容，直接使用
+    // if (!text && element.textContent && element.textContent.trim()) {
+    //   text = element.textContent.trim();
+    //   // console.log('方法8 - 元素文本内容:', text);
+    // }
 
+    // 限制文本长度，避免过长内容
+    // if (text.length > 100) {
+    //   // console.log('文本过长，截断');
+    //   return '';
+    // }
+
+    // console.log('最终提取的文本:', text);
+    return text;
+  }
+
+  extractDirectTextContent(element) {
+    // 提取元素直接包含的文本内容
+    // 只提取作为直接子节点的文本节点内容，忽略子元素中的文本
+    
+    if (!element.childNodes || element.childNodes.length === 0) {
+      return '';
+    }
+    
+    let directText = '';
+    
+    // 遍历直接子节点，只提取文本节点
+    for (let i = 0; i < element.childNodes.length; i++) {
+      const child = element.childNodes[i];
+      
+      // 只处理文本节点
+      if (child.nodeType === Node.TEXT_NODE && child.textContent.trim()) {
+        directText += child.textContent.trim() + ' ';
+      }
+    }
+    
+    return directText.trim();
+  }
   extractFrameworkComponentText(element) {
     let text = '';
     
