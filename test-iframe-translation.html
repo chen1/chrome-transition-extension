@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试iframe翻译功能</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        iframe {
+            border: 2px solid #ccc;
+            margin: 10px 0;
+            width: 100%;
+            height: 300px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .debug-info {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>iframe翻译功能测试</h1>
+        
+        <div class="test-section">
+            <h2>主窗口测试元素</h2>
+            <p>将鼠标悬停在下面的元素上测试翻译功能：</p>
+            <button>Submit</button>
+            <span>Hello World</span>
+            <div>This is a <strong>test</strong> element</div>
+        </div>
+
+        <div class="test-section">
+            <h2>iframe内容测试</h2>
+            <p>下面的iframe包含需要翻译的内容：</p>
+            <iframe id="testIframe" srcdoc='
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        .test-element { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+                    </style>
+                </head>
+                <body>
+                    <h3>iframe内部内容</h3>
+                    <div class="test-element">
+                        <button>Submit</button>
+                        <span>Hello</span>
+                    </div>
+                    <div class="test-element">
+                        This is a <strong>test</strong> with mixed content
+                    </div>
+                    <div class="test-element">
+                        <p>Welcome to our <em>website</em></p>
+                    </div>
+                </body>
+                </html>
+            '></iframe>
+        </div>
+
+        <div class="debug-info" id="debugInfo">
+            <h3>调试信息</h3>
+            <div id="debugContent">等待扩展加载...</div>
+        </div>
+    </div>
+
+    <script>
+        // 等待扩展加载
+        setTimeout(() => {
+            const debugContent = document.getElementById('debugContent');
+            
+            if (window.translationTooltip) {
+                debugContent.innerHTML = `
+                    <strong>扩展状态:</strong><br>
+                    - translationTooltip: ✓ 已加载<br>
+                    - textSegmentTranslator: ${window.translationTooltip.textSegmentTranslator ? '✓ 已加载' : '✗ 未加载'}<br>
+                    - unifiedTranslationProcessor: ${window.translationTooltip.unifiedTranslationProcessor ? '✓ 已加载' : '✗ 未加载'}<br>
+                    - iframeHandler: ${window.translationTooltip.iframeHandler ? '✓ 已加载' : '✗ 未加载'}<br>
+                    - displayFormatter: ${window.translationTooltip.displayFormatter ? '✓ 已加载' : '✗ 未加载'}<br>
+                    <br>
+                    <strong>iframe处理器状态:</strong><br>
+                    ${window.translationTooltip.iframeHandler ? 
+                        `- unifiedTranslationProcessor: ${window.translationTooltip.iframeHandler.unifiedTranslationProcessor ? '✓ 已加载' : '✗ 未加载'}<br>
+                         - textSegmentTranslator引用: ${window.translationTooltip.iframeHandler.unifiedTranslationProcessor?.textSegmentTranslator ? '✓ 正常' : '✗ 为null'}` 
+                        : '- iframe处理器未加载'}
+                `;
+            } else {
+                debugContent.innerHTML = '<strong>扩展未加载或加载失败</strong>';
+            }
+        }, 2000);
+
+        // 监听iframe加载完成
+        document.getElementById('testIframe').addEventListener('load', () => {
+            console.log('iframe加载完成');
+            setTimeout(() => {
+                // 检查iframe内的翻译功能
+                const iframe = document.getElementById('testIframe');
+                try {
+                    const iframeDoc = iframe.contentDocument;
+                    console.log('iframe文档可访问:', !!iframeDoc);
+                    console.log('iframe内元素数量:', iframeDoc.querySelectorAll('*').length);
+                } catch (error) {
+                    console.log('iframe文档访问失败:', error);
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

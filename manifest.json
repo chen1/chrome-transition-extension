@@ -12,7 +12,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["shared-dom-observer.js", "translation-service.js", "text-segment-translator.js", "display-formatter.js", "iframe-cache-manager.js", "iframe-handler.js", "lightweight-popup-detector.js", "content.js", "floating-ball-translator.js"],
+      "js": ["shared-dom-observer.js", "translation-service.js", "text-segment-translator.js", "display-formatter.js", "iframe-cache-manager.js", "unified-translation-processor.js", "iframe-handler.js", "lightweight-popup-detector.js", "content.js", "floating-ball-translator.js"],
       "css": ["styles.css"],
       "run_at": "document_end"
     }

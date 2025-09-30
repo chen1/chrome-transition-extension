@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-09-25 16:55:21
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-30 14:51:11
+ * @LastEditTime: 2025-09-30 15:51:56
  * @FilePath: /transition-extension/content.js
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -17,6 +17,7 @@ class TranslationTooltip {
     this.iframeHandler = null; // iframe处理器
     this.textSegmentTranslator = null; // 文本段翻译器
     this.displayFormatter = null; // 显示格式化器
+    this.unifiedTranslationProcessor = null; // 统一翻译处理器
     
     this.init();
   }
@@ -32,9 +33,10 @@ class TranslationTooltip {
       this.initTranslationService();
       this.createTooltip();
       this.initDisplayFormatter();
+      this.initTextSegmentTranslator();
+      this.initUnifiedTranslationProcessor();
       this.initIframeHandler();
       this.initLightweightPopupDetector();
-      this.initTextSegmentTranslator();
       this.bindEvents();
       
       // 主动检测并绑定iframe事件
@@ -149,6 +151,21 @@ class TranslationTooltip {
       }
     } catch (error) {
       // console.error('初始化文本段翻译器失败:', error);
+    }
+  }
+
+  initUnifiedTranslationProcessor() {
+    // console.log('初始化统一翻译处理器');
+    try {
+      // 检查UnifiedTranslationProcessor是否已加载
+      if (typeof UnifiedTranslationProcessor !== 'undefined') {
+        this.unifiedTranslationProcessor = new UnifiedTranslationProcessor(this);
+        // console.log('统一翻译处理器初始化成功');
+      } else {
+        // console.warn('UnifiedTranslationProcessor未找到，将使用原有翻译方法');
+      }
+    } catch (error) {
+      // console.error('初始化统一翻译处理器失败:', error);
     }
   }
 
@@ -824,8 +841,29 @@ class TranslationTooltip {
     // console.log('=== showTooltip 开始执行 ===');
     // console.log('目标元素:', element);
     // console.log('元素文本内容:', element.textContent);
-    // console.log('文本段翻译器是否存在:', !!this.textSegmentTranslator);
-    // console.log('显示格式化器是否存在:', !!this.displayFormatter);
+    // console.log('统一翻译处理器是否存在:', !!this.unifiedTranslationProcessor);
+    
+    // 优先使用统一翻译处理器
+    if (this.unifiedTranslationProcessor) {
+      const translationResult = this.unifiedTranslationProcessor.processElementTranslation(
+        element, 
+        event, 
+        { context: 'main' }
+      );
+      
+      if (translationResult) {
+        this.unifiedTranslationProcessor.displayTranslationResult(translationResult);
+        return;
+      }
+      // console.log('统一翻译处理器没有结果，使用降级方法');
+    }
+    
+    // 降级到原有方法
+    // this.showTooltipFallback(element, event);
+  }
+
+  showTooltipFallback(element, event) {
+    // console.log('=== showTooltipFallback 开始执行 ===');
     
     // 检查是否应该使用文本段翻译
     if (this.shouldUseTextSegmentTranslation(element)) {
@@ -929,15 +967,7 @@ class TranslationTooltip {
     // 检查元素是否包含多个需要翻译的文本段
     // const hasMultipleTextSegments = this.hasMultipleTextSegments(element);
     
-    // console.log('文本段翻译判断:', {
-//       hasOnlyOneTextNode,
-//       hasMixedNodes,
-//       hasMultipleTextSegments,
-//       shouldUse: hasMixedNodes || hasMultipleTextSegments
-
-// });
     
-    // return hasMixedNodes || hasMultipleTextSegments;
     return hasMixedNodes ;
   }
 
@@ -1102,49 +1132,49 @@ class TranslationTooltip {
       // console.log('方法2 - 单一文本节点:', text);
     }
     // 3. 如果元素本身有文本内容且没有子元素，直接使用
-    else if (element.textContent && element.textContent.trim() && element.children.length === 0) {
-      text = element.textContent.trim();
-      // console.log('方法3 - 元素本身文本内容:', text);
-    }
+    // else if (element.textContent && element.textContent.trim() && element.children.length === 0) {
+    //   text = element.textContent.trim();
+    //   // console.log('方法3 - 元素本身文本内容:', text);
+    // }
     // 4. 标准HTML元素
-    else if (element.tagName && this.isSupportedElement(element)) {
-      text = element.textContent.trim();
-      // console.log('方法4 - 标准HTML元素:', text);
-    }
+    // else if (element.tagName && this.isSupportedElement(element)) {
+    //   text = element.textContent.trim();
+    //   // console.log('方法4 - 标准HTML元素:', text);
+    // }
     // 5. Vue/Angular自定义元素检测
-    else if (this.isFrameworkComponent(element)) {
-      text = this.extractFrameworkComponentText(element);
-      // console.log('方法5 - 框架组件:', text);
-    }
+    // else if (this.isFrameworkComponent(element)) {
+    //   text = this.extractFrameworkComponentText(element);
+    //   // console.log('方法5 - 框架组件:', text);
+    // }
     // 6. 属性文本提取
-    else if (element.getAttribute) {
-      text = this.extractAttributeText(element);
-      // console.log('方法6 - 属性文本:', text);
-    }
+    // else if (element.getAttribute) {
+    //   text = this.extractAttributeText(element);
+    //   // console.log('方法6 - 属性文本:', text);
+    // }
     
     // 7. 如果以上方法都没有提取到文本，尝试查找子元素中的文本
-    if (!text && element.children && element.children.length > 0) {
-      // 查找第一个有文本内容的子元素
-      for (let child of element.children) {
-        if (this.isSupportedElement(child) && child.textContent.trim()) {
-          text = child.textContent.trim();
-          // console.log('方法7 - 子元素文本:', text);
-          break;
-        }
-      }
-    }
+    // if (!text && element.children && element.children.length > 0) {
+    //   // 查找第一个有文本内容的子元素
+    //   for (let child of element.children) {
+    //     if (this.isSupportedElement(child) && child.textContent.trim()) {
+    //       text = child.textContent.trim();
+    //       // console.log('方法7 - 子元素文本:', text);
+    //       break;
+    //     }
+    //   }
+    // }
     
     // 8. 最后尝试：如果元素本身有文本内容，直接使用
-    if (!text && element.textContent && element.textContent.trim()) {
-      text = element.textContent.trim();
-      // console.log('方法8 - 元素文本内容:', text);
-    }
+    // if (!text && element.textContent && element.textContent.trim()) {
+    //   text = element.textContent.trim();
+    //   // console.log('方法8 - 元素文本内容:', text);
+    // }
 
     // 限制文本长度，避免过长内容
-    if (text.length > 100) {
-      // console.log('文本过长，截断');
-      return '';
-    }
+    // if (text.length > 100) {
+    //   // console.log('文本过长，截断');
+    //   return '';
+    // }
 
     // console.log('最终提取的文本:', text);
     return text;
