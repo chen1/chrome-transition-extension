@@ -194,7 +194,7 @@ class TranslationTooltip {
                         window.location.href.includes('iframe_test_translate.html') ;
                        
       
-      const dictFile = isTestPage ? 'test-dict.json' : 'translation-dict.json';
+      const dictFile = isTestPage ? 'test-dict.json' : 'dict/his-dict.json';
       // console.log(`检测到${isTestPage ? '测试' : '正式'}环境，使用字典: ${dictFile}`);
       
       const response = await fetch(chrome.runtime.getURL(dictFile));
@@ -211,7 +211,7 @@ class TranslationTooltip {
       
       // 尝试加载备用字典
       try {
-        const fallbackFile = isTestPage ? 'translation-dict.json' : 'test-dict.json';
+        const fallbackFile = isTestPage ? 'dict/his-dict.json' : 'test-dict.json';
         // console.log(`尝试加载备用字典: ${fallbackFile}`);
         const fallbackResponse = await fetch(chrome.runtime.getURL(fallbackFile));
         
