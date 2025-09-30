@@ -216,7 +216,32 @@ class TranslationService {
       (parentElement.tagName.toLowerCase() === 'td' || 
        parentElement.tagName.toLowerCase() === 'th');
     
-    return hasHdrCellClass && isParentTableCell;
+    // 检查元素的父级中是否有table元素且该table元素类名包含"hdr"
+    const hasHdrTable = this.hasParentTableWithHdrClass(element);
+    
+    return (hasHdrCellClass && isParentTableCell) || hasHdrTable;
+  }
+
+  /**
+   * 检查元素的父级中是否有table元素且该table元素类名包含"hdr"
+   * @param {Element} element - DOM元素
+   * @returns {boolean} - 是否有符合条件的table父元素
+   */
+  hasParentTableWithHdrClass(element) {
+    let currentElement = element;
+    
+    while (currentElement && currentElement.parentElement) {
+      currentElement = currentElement.parentElement;
+      
+      if (currentElement.tagName && currentElement.tagName.toLowerCase() === 'table') {
+        // 检查table元素的类名是否包含"hdr"
+        if (currentElement.classList && currentElement.classList.contains('hdr')) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
   }
 
   /**

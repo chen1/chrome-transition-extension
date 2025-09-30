@@ -55,10 +55,14 @@ class DisplayFormatter {
     let jsonString;
     try {
       // 手动构建JSON字符串以保持顺序
-      const jsonParts = translationPairs.map(pair => 
-        `  "${pair.original.replace(/"/g, '\\"')}": "${pair.translated.replace(/"/g, '\\"')}"`
-      );
-      jsonString = `{\n${jsonParts.join(',\n')}\n}`;
+    //   const jsonParts = translationPairs.map(pair => 
+    //     `  "${pair.original.replace(/"/g, '\\"')}": "${pair.translated.replace(/"/g, '\\"')}"`
+    //   );
+    //   jsonString = `{\n${jsonParts.join(',\n')}\n}`;
+      //临时修改为仅展示翻译内容，空格分隔多个中文
+      const jsonParts = translationPairs.reduce((acc, pair)  => 
+        acc + `  ${pair.translated.replace(/"/g, '\\"') } ` +' ', '');
+      jsonString = jsonParts;
       
       // console.log('构建的JSON字符串:', jsonString);
       // console.log('JSON字符串长度:', jsonString.length);
