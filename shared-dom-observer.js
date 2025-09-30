@@ -335,6 +335,11 @@ class SharedDOMObserver {
     const className = (element.className || '').toString().toLowerCase();
     const id = (element.id || '').toLowerCase();
 
+    // 排除类名包含.blockUI.blockOverlay的元素
+    // if (className.includes('blockui') && className.includes('blockoverlay')) {
+    //     return false;
+    // }
+
     // 检查标签名
     const popupTags = ['dialog', 'modal', 'popup', 'overlay'];
     if (popupTags.includes(tagName)) return true;

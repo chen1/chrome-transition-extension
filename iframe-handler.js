@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-09-25 16:55:21
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-30 11:33:19
+ * @LastEditTime: 2025-09-30 14:29:21
  * @FilePath: /transition-extension/iframe-handler.js
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -869,6 +869,8 @@ class IframeHandler {
       const cache = this.getCache();
       if (cache.hasIframe(iframe)) {
         console.log(`iframe ${index + 1} 已绑定，跳过`);
+        // 使用递归嵌套检测方法，支持一层层往里嵌套
+        this.detectNestedIframesInCurrentLevel(iframe, 0,0);
         return;
       }
       
@@ -901,14 +903,14 @@ class IframeHandler {
         
         // 特殊处理从about:blank到实际URL的变化
         if (oldSrc === 'about:blank' && newSrc !== 'about:blank') {
-          console.log('iframe从about:blank加载到实际内容，延迟绑定事件');
+          console.log('iframe src从about:blank加载到实际内容，延迟绑定事件');
           setTimeout(() => {
             debugger;
             this.tryBindIframeEvents(targetIframe, 0); // 重置重试次数
           }, 2000); // 给更多时间加载
         } else if (newSrc !== 'about:blank') {
           // 其他src变化
-          console.log('iframe src变化，延迟绑定事件:',newSrc);
+          console.log('iframe src从about:blank变化到实际内容，延迟绑定事件:',newSrc);
           setTimeout(() => {
             this.tryBindIframeEvents(targetIframe, 0); // 重置重试次数
           }, 1000);
@@ -930,7 +932,7 @@ class IframeHandler {
    * @param {number} retryCount - 当前重试次数
    */
   tryBindIframeEvents(iframe, retryCount = 0) {
-    const maxRetries = 6; // 减少最大重试次数，提高效率
+    const maxRetries = 5; // 减少最大重试次数，提高效率
     
     // 检查是否已经绑定过
     const cache = this.getCache();
@@ -941,7 +943,11 @@ class IframeHandler {
     
     // 检查重试次数
     if (retryCount >= maxRetries) {
-      console.log(`iframe重试次数已达上限(${maxRetries})，停止重试:`, iframe.src);
+      console.log(`iframe重试次数已达上限(${maxRetries})，等待加载完成后绑定事件：`, iframe.src);
+      iframe&&(iframe.onload=function(){
+        console.log('iframe加载完成，绑定事件：', iframe.src);
+        this.bindIframeEvents(iframe, iframe.contentDocument, iframe.contentWindow);
+      })
       return;
     }
     

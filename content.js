@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-09-25 16:55:21
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-30 09:54:55
+ * @LastEditTime: 2025-09-30 14:51:11
  * @FilePath: /transition-extension/content.js
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -606,41 +606,6 @@ class TranslationTooltip {
     }
   }
 
-  /**
-   * 检查元素是否为弹窗元素
-   * @param {Element} element - 要检查的元素
-   * @returns {boolean} - 是否为弹窗元素
-   */
-  isPopupElement(element) {
-    if (!element || !element.tagName) return false;
-    
-    const tagName = element.tagName.toLowerCase();
-    const className = (element.className || '').toString().toLowerCase();
-    const id = (element.id || '').toLowerCase();
-    
-    // 检查标签名
-    const popupTags = ['dialog', 'modal', 'popup', 'overlay'];
-    if (popupTags.includes(tagName)) return true;
-    
-    // 检查类名
-    const popupClasses = ['modal', 'popup', 'dialog', 'overlay', 'lightbox'];
-    if (popupClasses.some(cls => className.includes(cls))) return true;
-    
-    // 检查ID
-    const popupIds = ['modal', 'popup', 'dialog', 'overlay'];
-    if (popupIds.some(popupId => id.includes(popupId))) return true;
-    
-    // 检查ARIA角色
-    const role = element.getAttribute('role');
-    if (role && ['dialog', 'modal', 'alertdialog'].includes(role)) return true;
-    
-    // 检查data属性
-    const dataModal = element.getAttribute('data-modal');
-    const dataPopup = element.getAttribute('data-popup');
-    if (dataModal || dataPopup) return true;
-    
-    return false;
-  }
 
   /**
    * 清理被移除弹窗内的iframe缓存
@@ -819,15 +784,15 @@ class TranslationTooltip {
     }
     
     // 如果当前元素没有直接文本，递归查找子元素
-    if (element.children && element.children.length > 0) {
-      for (let child of element.children) {
-        const deepest = this.findDeepestTextElement(child);
-        if (deepest) {
-          // console.log('在子元素中找到文本元素:', deepest);
-          return deepest;
-        }
-      }
-    }
+    // if (element.children && element.children.length > 0) {
+    //   for (let child of element.children) {
+    //     const deepest = this.findDeepestTextElement(child);
+    //     if (deepest) {
+    //       // console.log('在子元素中找到文本元素:', deepest);
+    //       return deepest;
+    //     }
+    //   }
+    // }
     
     // console.log('未找到合适的文本元素');
     return null;
@@ -962,7 +927,7 @@ class TranslationTooltip {
     const hasMixedNodes = this.hasMixedNodeStructure(element);
     
     // 检查元素是否包含多个需要翻译的文本段
-    const hasMultipleTextSegments = this.hasMultipleTextSegments(element);
+    // const hasMultipleTextSegments = this.hasMultipleTextSegments(element);
     
     // console.log('文本段翻译判断:', {
 //       hasOnlyOneTextNode,
@@ -972,7 +937,8 @@ class TranslationTooltip {
 
 // });
     
-    return hasMixedNodes || hasMultipleTextSegments;
+    // return hasMixedNodes || hasMultipleTextSegments;
+    return hasMixedNodes ;
   }
 
   /**

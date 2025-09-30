@@ -1,3 +1,11 @@
+/*
+ * @Author: chenjie chenjie@huimei.com
+ * @Date: 2025-09-25 18:49:29
+ * @LastEditors: chenjie chenjie@huimei.com
+ * @LastEditTime: 2025-09-30 13:53:23
+ * @FilePath: /transition-extension/lightweight-popup-detector.js
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 /**
  * 轻量级弹窗检测器
  * 专门处理异步弹窗iframe事件绑定的内存友好方案
@@ -421,45 +429,6 @@ class LightweightPopupDetector {
     // console.log(`轻量级检测器缓存管理器清理完成，移除了 ${cleanedCount} 个iframe`);
   }
 
-  /**
-   * 检查元素是否为弹窗元素
-   * 用于更精确的弹窗识别
-   */
-  isPopupElement(element) {
-    if (!element || !element.tagName) return false;
-    
-    const tagName = element.tagName.toLowerCase();
-    const className = (element.className || '').toString().toLowerCase();
-    const id = (element.id || '').toLowerCase();
-    
-    // 排除类名包含.blockUI.blockOverlay的元素
-    if (className.includes('blockui') && className.includes('blockoverlay')) {
-      return false;
-    }
-    
-    // 检查标签名
-    const popupTags = ['dialog', 'modal', 'popup', 'overlay'];
-    if (popupTags.includes(tagName)) return true;
-    
-    // 检查类名
-    const popupClasses = ['modal', 'popup', 'dialog', 'overlay', 'lightbox', 'blockui', 'blockmsg', 'blockpage'];
-    if (popupClasses.some(cls => className.includes(cls))) return true;
-    
-    // 检查ID
-    const popupIds = ['modal', 'popup', 'dialog', 'overlay', 'blockui', 'blockmsg', 'blockpage'];
-    if (popupIds.some(popupId => id.includes(popupId))) return true;
-    
-    // 检查ARIA角色
-    const role = element.getAttribute('role');
-    if (role && ['dialog', 'modal', 'alertdialog'].includes(role)) return true;
-    
-    // 检查data属性
-    const dataModal = element.getAttribute('data-modal');
-    const dataPopup = element.getAttribute('data-popup');
-    if (dataModal || dataPopup) return true;
-    
-    return false;
-  }
 }
 
 // 导出模块
