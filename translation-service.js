@@ -79,7 +79,7 @@ class TranslationService {
       }
     }
 
-    return null;
+    return text;
   }
 
   /**

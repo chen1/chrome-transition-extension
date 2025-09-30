@@ -30,6 +30,7 @@ class SharedDOMObserver {
     
     this.observers = new Map(); // 存储多个observer实例
     this.iframeDetectionTimeout = null; // 防抖定时器
+    this.processedIframes = new WeakSet(); // 用于跟踪已处理的iframe节点，防止重复添加
   }
 
   /**
@@ -129,22 +130,38 @@ class SharedDOMObserver {
   analyzeAddedNode(node, changes) {
     // 检查新增的节点是否是iframe
     if (node.tagName === 'IFRAME') {
-      // this.log('检测到新添加的iframe:', {
-      //   id: node.id,
-      //   src: node.src,
-      //   className: node.className,
-      //   parentElement: node.parentElement?.tagName
-      // });
-      changes.hasNewIframe = true;
-      changes.newIframes.push(node);
+      // 验重逻辑：检查是否已经处理过该iframe
+      if (!this.processedIframes.has(node)) {
+        // this.log('检测到新添加的iframe:', {
+        //   id: node.id,
+        //   src: node.src,
+        //   className: node.className,
+        //   parentElement: node.parentElement?.tagName
+        // });
+        changes.hasNewIframe = true;
+        changes.newIframes.push(node);
+        // 标记该iframe已被处理
+        this.processedIframes.add(node);
+      }
     }
 
     // 检查新增的节点内部是否包含iframe
     const iframes = node.querySelectorAll && node.querySelectorAll('iframe');
     if (iframes && iframes.length > 0) {
-      // this.log(`检测到包含 ${iframes.length} 个iframe的新节点`);
-      changes.hasNewIframe = true;
-      changes.newIframes.push(...Array.from(iframes));
+      const newIframes = Array.from(iframes).filter(iframe => {
+        // 验重逻辑：只处理未被处理过的iframe
+        if (!this.processedIframes.has(iframe)) {
+          this.processedIframes.add(iframe);
+          return true;
+        }
+        return false;
+      });
+      
+      if (newIframes.length > 0) {
+        // this.log(`检测到包含 ${newIframes.length} 个新iframe的节点`);
+        changes.hasNewIframe = true;
+        changes.newIframes.push(...newIframes);
+      }
     }
 
     // 检测弹窗相关的变化
@@ -370,6 +387,9 @@ class SharedDOMObserver {
       clearTimeout(this.iframeDetectionTimeout);
       this.iframeDetectionTimeout = null;
     }
+
+    // 清理已处理的iframe跟踪记录
+    this.processedIframes = new WeakSet();
   }
 
   /**

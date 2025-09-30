@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-09-25 16:55:21
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-28 18:59:42
+ * @LastEditTime: 2025-09-30 09:54:55
  * @FilePath: /transition-extension/content.js
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -308,6 +308,12 @@ class TranslationTooltip {
   resetElementPointerEvents(element, context = 'main') {
     if (!element) return;
     
+    // 验证element是否为有效的DOM元素
+    if (!(element instanceof Element)) {
+    //   console.log(`${context}传入的不是有效的DOM元素:`, element);
+      return;
+    }
+    
     // console.log(`检查${context}元素的pointer-events样式:`, element);
     
     // 检查当前元素的pointer-events样式
@@ -357,8 +363,8 @@ class TranslationTooltip {
   bindEvents() {
     // console.log('=== 绑定事件监听器 ===');
     document.addEventListener('mouseover', this.handleMouseOver.bind(this));
-    document.addEventListener('mouseout', this.handleMouseOut.bind(this));
-    document.addEventListener('scroll', this.handleScroll.bind(this));
+    document.addEventListener('mouseleave', this.handleMouseOut.bind(this));
+    // document.addEventListener('scroll', this.handleScroll.bind(this));
     // console.log('事件监听器绑定完成');
     
     // 添加DOM变化监听器，动态检测新添加的iframe
@@ -719,7 +725,18 @@ class TranslationTooltip {
   }
 
   handleMouseOver(event) {
-    const element = event.target;
+    let element = event.target;
+    
+    // 如果target不是Element（比如是文本节点），则获取其父元素
+    if (element && !(element instanceof Element)) {
+      element = element.parentElement;
+    }
+    
+    // 如果仍然没有有效的元素，则跳过处理
+    if (!element || !(element instanceof Element)) {
+      return;
+    }
+    
     // console.log('=== 鼠标悬停事件触发 ===');
     // console.log('目标元素:', element);
     // console.log('元素标签:', element.tagName);
@@ -773,8 +790,8 @@ class TranslationTooltip {
 
     // 延迟隐藏tooltip
     this.hideTimeout = setTimeout(() => {
-      this.hideTooltip();
-    }, 100);
+      this.hideTooltip(event);
+    }, 200);
   }
 
   handleScroll() {
@@ -866,7 +883,8 @@ class TranslationTooltip {
     // console.log('翻译结果:', translation);
     // console.log('翻译字典大小:', Object.keys(this.translationDict).length);
     
-    if (!translation || translation === text) {
+    // if (!translation || translation === text) {
+    if (!translation) {
       // console.log('没有找到翻译或翻译与原文相同，退出');
       return;
     }
@@ -903,7 +921,7 @@ class TranslationTooltip {
 });
   }
 
-  hideTooltip() {
+  hideTooltip(event) {
     if (this.tooltip) {
       // console.log('隐藏tooltip');
       this.tooltip.style.opacity = '0';

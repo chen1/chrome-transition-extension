@@ -2,14 +2,14 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-01-27 10:00:00
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-28 19:23:28
+ * @LastEditTime: 2025-09-29 16:44:12
  * @FilePath: /transition-extension/floating-ball-translator.js
  * @Description: 悬浮球翻译功能控制器 - 独立文件实现
  */
 
 class FloatingBallTranslator {
   constructor() {
-    this.isTranslationEnabled = false;
+    this.isTranslationEnabled = true;
     this.translationTooltip = null;
     this.floatingBall = null; // 悬浮球元素
     this.expandedMenu = null; // 展开的菜单
@@ -107,27 +107,35 @@ class FloatingBallTranslator {
   createFloatingBall() {
     // console.log('创建悬浮球');
     
+    // 创建包装容器来控制整个操作区域
+    this.floatingContainer = document.createElement('div');
+    this.floatingContainer.id = 'translation-floating-container';
+    this.floatingContainer.className = 'translation-floating-container';
+    this.floatingContainer.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 999999;
+      user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    `;
+
     // 创建悬浮球容器
     this.floatingBall = document.createElement('div');
     this.floatingBall.id = 'translation-floating-ball';
     this.floatingBall.className = 'translation-floating-ball';
     this.floatingBall.style.cssText = `
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
+      position: relative;
       width: 50px;
       height: 50px;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       border-radius: 50%;
       cursor: pointer;
-      z-index: 999999;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
       transition: all 0.3s ease;
       display: flex;
       align-items: center;
       justify-content: center;
-      user-select: none;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     `;
 
     // 添加翻译图标
@@ -141,11 +149,17 @@ class FloatingBallTranslator {
     `;
     this.floatingBall.appendChild(icon);
 
+    // 将悬浮球添加到包装容器
+    this.floatingContainer.appendChild(this.floatingBall);
+
     // 创建展开菜单
     this.createExpandedMenu();
 
-    // 将悬浮球添加到页面
-    document.body.appendChild(this.floatingBall);
+    // 将包装容器添加到页面
+    document.body.appendChild(this.floatingContainer);
+    
+    // 绑定包装容器的鼠标事件来控制菜单显隐
+    this.bindContainerMouseEvents();
     
     // console.log('悬浮球创建完成');
   }
@@ -162,7 +176,7 @@ class FloatingBallTranslator {
     this.expandedMenu.className = 'translation-expanded-menu';
     this.expandedMenu.style.cssText = `
       position: absolute;
-      bottom: 60px;
+      bottom: 50px;
       right: 0;
       background: white;
       border: 1px solid #ddd;
@@ -175,7 +189,6 @@ class FloatingBallTranslator {
       font-size: 14px;
       user-select: none;
       opacity: 0;
-      transform: translateY(10px);
       transition: all 0.3s ease;
     `;
 
@@ -348,7 +361,31 @@ class FloatingBallTranslator {
     //   // console.log('延迟时间到，隐藏菜单');
       this.hideExpandedMenu();
       this.hideMenuTimeout = null;
-    }, 300);
+    },0 );
+  }
+
+  /**
+   * 绑定包装容器的鼠标事件来控制菜单显隐
+   */
+  bindContainerMouseEvents() {
+    // console.log('绑定包装容器鼠标事件');
+    
+    // 鼠标进入包装容器时显示菜单
+    this.floatingBall.addEventListener('mouseover', () => {
+      // console.log('鼠标进入包装容器，显示菜单');
+      // 清除隐藏定时器
+      if (this.hideMenuTimeout) {
+        clearTimeout(this.hideMenuTimeout);
+        this.hideMenuTimeout = null;
+      }
+      this.showExpandedMenu();
+    });
+
+    // 鼠标离开包装容器时延迟隐藏菜单
+    this.floatingBall.addEventListener('mouseout', () => {
+      // console.log('鼠标离开包装容器，延迟隐藏菜单');
+      this.scheduleHideMenu();
+    });
   }
 
   /**
@@ -370,7 +407,7 @@ class FloatingBallTranslator {
 
     // 点击页面其他地方隐藏菜单
     document.addEventListener('click', (e) => {
-      if (!this.floatingBall.contains(e.target)) {
+      if (!this.floatingContainer.contains(e.target)) {
         // 清除隐藏定时器
         if (this.hideMenuTimeout) {
           clearTimeout(this.hideMenuTimeout);
@@ -416,7 +453,7 @@ class FloatingBallTranslator {
       startX = e.clientX;
       startY = e.clientY;
       
-      const rect = this.floatingBall.getBoundingClientRect();
+      const rect = this.floatingContainer.getBoundingClientRect();
       initialX = rect.left;
       initialY = rect.top;
       
@@ -442,16 +479,16 @@ class FloatingBallTranslator {
       const newY = initialY + deltaY;
       
       // 限制在视窗范围内
-      const maxX = window.innerWidth - this.floatingBall.offsetWidth;
-      const maxY = window.innerHeight - this.floatingBall.offsetHeight;
+      const maxX = window.innerWidth - this.floatingContainer.offsetWidth;
+      const maxY = window.innerHeight - this.floatingContainer.offsetHeight;
       
       const clampedX = Math.max(0, Math.min(newX, maxX));
       const clampedY = Math.max(0, Math.min(newY, maxY));
       
-      this.floatingBall.style.left = clampedX + 'px';
-      this.floatingBall.style.top = clampedY + 'px';
-      this.floatingBall.style.right = 'auto';
-      this.floatingBall.style.bottom = 'auto';
+      this.floatingContainer.style.left = clampedX + 'px';
+      this.floatingContainer.style.top = clampedY + 'px';
+      this.floatingContainer.style.right = 'auto';
+      this.floatingContainer.style.bottom = 'auto';
     };
 
     // 拖拽结束处理
@@ -503,9 +540,9 @@ class FloatingBallTranslator {
     this.expandedMenu.style.opacity = '0';
     this.expandedMenu.style.transform = 'translateY(10px)';
     
-    setTimeout(() => {
+    // setTimeout(() => {
       this.expandedMenu.style.display = 'none';
-    }, 300);
+    // }, 300);
     
     // // console.log('展开菜单已隐藏');
   }
@@ -1122,14 +1159,15 @@ class FloatingBallTranslator {
     this.unbindTranslationEvents();
     
     
-    // 移除悬浮球
-    if (this.floatingBall && this.floatingBall.parentNode) {
-      this.floatingBall.parentNode.removeChild(this.floatingBall);
+    // 移除包装容器
+    if (this.floatingContainer && this.floatingContainer.parentNode) {
+      this.floatingContainer.parentNode.removeChild(this.floatingContainer);
     }
     
     // 清理引用
     this.translationTooltip = null;
     this.floatingBall = null;
+    this.floatingContainer = null;
     this.expandedMenu = null;
     this.menuItems = [];
     

@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-09-25 16:55:21
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-28 19:13:33
+ * @LastEditTime: 2025-09-30 11:33:19
  * @FilePath: /transition-extension/iframe-handler.js
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -1002,7 +1002,7 @@ class IframeHandler {
         // 延迟重试，减少延迟时间
         setTimeout(() => {
           this.tryBindIframeEvents(iframe, retryCount + 1);
-        }, 1000);
+        }, 2000);
         return;
       }
       
@@ -1024,7 +1024,7 @@ class IframeHandler {
       // 延迟重试，减少延迟时间
       setTimeout(() => {
         this.tryBindIframeEvents(iframe, retryCount + 1);
-      }, 1000);
+      }, 2000);
     }
   }
 
@@ -1049,7 +1049,7 @@ class IframeHandler {
 
       // 优化延迟策略：减少延迟时间，提高检测效率
       // 第0层500ms，第1层800ms，第2层及以上1000ms
-      const delay = level === 0 ? 500 : level === 1 ? 800 : 1000;
+      const delay = level === 0 ? 1000 : level === 1 ? 2000 : 3000;
       console.log(`第 ${level} 层iframe等待 ${delay}ms 后检测嵌套iframe`);
       
       setTimeout(() => {
@@ -1065,23 +1065,24 @@ class IframeHandler {
    * 检测当前层级iframe内部的嵌套iframe
    * @param {Element} iframeElement - iframe元素
    * @param {number} level - 当前嵌套层级
+   * @param {number} retryCount - 当前重试次数，默认为0
    */
-  detectNestedIframesInCurrentLevel(iframeElement, level) {
+  detectNestedIframesInCurrentLevel(iframeElement, level, retryCount = 0) {
     debugger;
     try {
       const iframeDocument = iframeElement.contentDocument;
       const iframeWindow = iframeElement.contentWindow;
 
       if (iframeDocument && iframeWindow) {
-        console.log(`第 ${level} 层iframe内容可访问，检测内部嵌套iframe`);
+        // console.log(`第 ${level} 层iframe内容可访问，检测内部嵌套iframe`);
         
         // 检测当前iframe内部的嵌套iframe
         const nestedIframes = iframeDocument.querySelectorAll('iframe');
-        console.log(`第 ${level} 层iframe内部找到 ${nestedIframes.length} 个嵌套iframe`);
+        console.log(`第 ${level} 层iframe " ${iframeElement.src} " 内部有 ${nestedIframes.length} 个嵌套iframe`);
 
         if (nestedIframes.length > 0) {
           nestedIframes.forEach((nestedIframe, index) => {
-            console.log(`处理第 ${level} 层iframe内部的第 ${index + 1} 个嵌套iframe:`, {
+            console.log(`处理第 ${level} 层iframe " ${iframeElement.src} " 内部的第 ${index + 1} 个嵌套iframe:`, {
               src: nestedIframe.src,
               id: nestedIframe.id,
               className: nestedIframe.className,
@@ -1097,28 +1098,44 @@ class IframeHandler {
             }, 300); // 减少延迟到300ms
           });
         } else {
-          console.log(`第 ${level} 层iframe内部没有找到嵌套iframe`);
+        //   console.log(`第 ${level} 层iframe " ${iframeElement.src} " 内部没有找到嵌套iframe`);
+        }
+        // 即使当前可以访问iframe内容，也进行重试检测以确保异步加载的内容能被获取
+        if (retryCount < 3 && !nestedIframes.length ) {
+          const nextRetryCount = retryCount + 1;
+          console.log(`第 ${level} 层iframe " ${iframeElement.src} " 内容可访问，但进行第 ${nextRetryCount} 次重试检测以确保异步内容完整加载，2秒后执行`);
+          setTimeout(() => {
+            this.detectNestedIframesInCurrentLevel(iframeElement, level, nextRetryCount);
+          }, 1000); // 重试间隔1秒
+        } else {
+          console.log(`第 ${level} 层iframe " ${iframeElement.src} " 已完成最大重试次数(3次)的检测`);
         }
       } else {
-        console.log(`第 ${level} 层iframe内容不可访问，可能是跨域限制或未加载完成`);
+        console.log(`第 ${level} 层iframe " ${iframeElement.src} " 内容不可访问，可能是跨域限制或未加载完成`);
         
-        // 如果内容不可访问，尝试延迟重试
-        if (level < 3) { // 最多重试3次
-          console.log(`第 ${level} 层iframe内容不可访问，500ms后重试`);
+        // 如果内容不可访问，尝试延迟重试（最多重试3次）
+        if (retryCount < 3) {
+          const nextRetryCount = retryCount + 1;
+          console.log(`第 ${level} 层iframe " ${iframeElement.src} " 内容不可访问，第 ${nextRetryCount} 次重试，2秒后执行`);
           setTimeout(() => {
-            this.detectNestedIframesInCurrentLevel(iframeElement, level);
-          }, 500);
+            this.detectNestedIframesInCurrentLevel(iframeElement, level, nextRetryCount);
+          }, 2000); // 重试间隔2秒
+        } else {
+        //   console.warn(`第 ${level} 层iframe " ${iframeElement.src} " 已达到最大重试次数(3次)，停止重试`);
         }
       }
     } catch (error) {
       console.warn(`检测第 ${level} 层iframe内部嵌套时出错:`, error);
       
-      // 出错时也尝试重试
-      if (level < 3) {
-        console.log(`第 ${level} 层iframe检测出错，500ms后重试`);
+      // 出错时也尝试重试（最多重试3次）
+      if (retryCount < 3) {
+        const nextRetryCount = retryCount + 1;
+        console.log(`第 ${level} 层iframe检测出错，第 ${nextRetryCount} 次重试，2秒后执行`);
         setTimeout(() => {
-          this.detectNestedIframesInCurrentLevel(iframeElement, level);
-        }, 500);
+          this.detectNestedIframesInCurrentLevel(iframeElement, level, nextRetryCount);
+        }, 2000); // 重试间隔2秒
+      } else {
+        console.error(`第 ${level} 层iframe " ${iframeElement.src} " 检测已达到最大重试次数(3次)，停止重试`);
       }
     }
   }
