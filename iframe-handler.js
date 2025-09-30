@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-09-25 16:55:21
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-30 15:41:14
+ * @LastEditTime: 2025-09-30 15:58:57
  * @FilePath: /transition-extension/iframe-handler.js
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -293,7 +293,8 @@ class IframeHandler {
           this.resetIframeElementPointerEvents(event.target);
           
           // 查找最底层的文本元素
-          const deepestTextElement = this.translationTooltip.findDeepestTextElement(event.target);
+          const deepestTextElement = this.unifiedTranslationProcessor ? 
+            this.unifiedTranslationProcessor.findDeepestTextElement(event.target) : null;
           // console.log('iframe内最底层文本元素:', deepestTextElement);
           
           // 提取文本并获取翻译
@@ -314,8 +315,6 @@ class IframeHandler {
             // console.log('iframe统一翻译处理器没有结果，使用降级方法');
           }
           
-          // 降级到原有方法
-        //   this.handleIframeTranslationFallback(element, event, iframeElement);
         } catch (error) {
           // console.error('iframe内部事件处理出错:', error);
           // console.error('错误堆栈:', error.stack);
@@ -595,46 +594,6 @@ class IframeHandler {
     }, 200); // 稍微快一点的响应时间
   }
 
-  /**
-   * iframe翻译降级处理方法
-   * @param {Element} element - 要翻译的元素
-   * @param {Event} event - 鼠标事件
-   * @param {Element} iframeElement - iframe元素
-   */
-  handleIframeTranslationFallback(element, event, iframeElement) {
-    // 检查是否应该使用文本段翻译
-    if (this.translationTooltip.shouldUseTextSegmentTranslation(element)) {
-      // console.log('iframe内使用文本段翻译处理元素');
-      this.handleIframeTextSegmentTranslation(element, event, iframeElement);
-      return;
-    }
-    
-    // 原有的简单文本翻译逻辑
-    const text = this.translationTooltip.extractElementText(element);
-    // console.log('iframe内提取的文本:', text);
-    
-    if (!text) {
-      // console.log('iframe内没有提取到文本，不显示tooltip');
-      // 如果没有文本，直接返回，不显示任何tooltip
-      return;
-    }
-    
-    const translation = this.translationTooltip.getTranslation(text, element);
-    // console.log('iframe内翻译结果:', translation);
-    
-    if (!translation || translation === text) {
-      // console.log('iframe内没有找到翻译，显示原始文本');
-      // 如果没有翻译，显示原始文本
-      this.showElementInfoInIframe(text, event, iframeElement);
-      return;
-    }
-    
-    // 计算iframe内元素在主窗口中的位置（支持多层嵌套）
-    const simulatedEvent = this.calculateNestedIframePosition(element, iframeElement);
-    
-    // 显示翻译提示
-    this.showTooltipForIframeElement(translation, simulatedEvent, iframeElement);
-  }
 
   /**
    * 处理iframe内部的文本段翻译

@@ -394,6 +394,70 @@ class UnifiedTranslationProcessor {
       });
     }, 200);
   }
+
+  /**
+   * 查找最底层的文本元素
+   * @param {Element} element - 要检查的元素
+   * @returns {Element|null} - 最底层的文本元素或null
+   */
+  findDeepestTextElement(element) {
+    // console.log('=== findDeepestTextElement 开始 ===');
+    // console.log('检查元素:', element);
+    
+    // 如果当前元素就是文本节点，直接返回其父元素
+    if (element.nodeType === Node.TEXT_NODE) {
+      // console.log('找到文本节点:', element.textContent);
+      return element.parentElement;
+    }
+    
+    // 检查当前元素是否直接包含文本（即使有其他element子节点）
+    const hasDirectText = this.hasDirectTextContent(element);
+    if (hasDirectText) {
+      // console.log('元素直接包含文本:', element.textContent);
+      return element;
+    }
+    
+    // 如果当前元素没有直接文本，递归查找子元素
+    // if (element.children && element.children.length > 0) {
+    //   for (let child of element.children) {
+    //     const deepest = this.findDeepestTextElement(child);
+    //     if (deepest) {
+    //       // console.log('在子元素中找到文本元素:', deepest);
+    //       return deepest;
+    //     }
+    //   }
+    // }
+    
+    // console.log('未找到合适的文本元素');
+    return null;
+  }
+
+  /**
+   * 检查元素是否直接包含文本内容
+   * @param {Element} element - 要检查的元素
+   * @returns {boolean} - 是否直接包含文本内容
+   */
+  hasDirectTextContent(element) {
+    // 检查元素是否直接包含文本内容
+    // 直接文本内容指的是：元素本身有文本节点作为直接子节点
+    
+    if (!element.childNodes || element.childNodes.length === 0) {
+      return false;
+    }
+    
+    // 遍历直接子节点，查找文本节点
+    for (let i = 0; i < element.childNodes.length; i++) {
+      const child = element.childNodes[i];
+      
+      // 如果是文本节点且有内容
+      if (child.nodeType === Node.TEXT_NODE && child.textContent.trim()) {
+        // console.log('发现直接文本子节点:', child.textContent.trim());
+        return true;
+      }
+    }
+    
+    return false;
+  }
 }
 
 // 导出模块

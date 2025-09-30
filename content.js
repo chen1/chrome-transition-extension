@@ -2,7 +2,7 @@
  * @Author: chenjie chenjie@huimei.com
  * @Date: 2025-09-25 16:55:21
  * @LastEditors: chenjie chenjie@huimei.com
- * @LastEditTime: 2025-09-30 15:51:56
+ * @LastEditTime: 2025-09-30 15:59:07
  * @FilePath: /transition-extension/content.js
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -745,7 +745,8 @@ class TranslationTooltip {
     }
     
     // 查找最底层的文本元素
-    const deepestTextElement = this.findDeepestTextElement(element);
+    const deepestTextElement = this.unifiedTranslationProcessor ? 
+      this.unifiedTranslationProcessor.findDeepestTextElement(element) : null;
     // console.log('最底层文本元素:', deepestTextElement);
     
     // 清除之前的定时器
@@ -783,59 +784,6 @@ class TranslationTooltip {
 
 
 
-  findDeepestTextElement(element) {
-    // console.log('=== findDeepestTextElement 开始 ===');
-    // console.log('检查元素:', element);
-    
-    // 如果当前元素就是文本节点，直接返回其父元素
-    if (element.nodeType === Node.TEXT_NODE) {
-      // console.log('找到文本节点:', element.textContent);
-      return element.parentElement;
-    }
-    
-    // 检查当前元素是否直接包含文本（即使有其他element子节点）
-    const hasDirectText = this.hasDirectTextContent(element);
-    if (hasDirectText) {
-      // console.log('元素直接包含文本:', element.textContent);
-      return element;
-    }
-    
-    // 如果当前元素没有直接文本，递归查找子元素
-    // if (element.children && element.children.length > 0) {
-    //   for (let child of element.children) {
-    //     const deepest = this.findDeepestTextElement(child);
-    //     if (deepest) {
-    //       // console.log('在子元素中找到文本元素:', deepest);
-    //       return deepest;
-    //     }
-    //   }
-    // }
-    
-    // console.log('未找到合适的文本元素');
-    return null;
-  }
-
-  hasDirectTextContent(element) {
-    // 检查元素是否直接包含文本内容
-    // 直接文本内容指的是：元素本身有文本节点作为直接子节点
-    
-    if (!element.childNodes || element.childNodes.length === 0) {
-      return false;
-    }
-    
-    // 遍历直接子节点，查找文本节点
-    for (let i = 0; i < element.childNodes.length; i++) {
-      const child = element.childNodes[i];
-      
-      // 如果是文本节点且有内容
-      if (child.nodeType === Node.TEXT_NODE && child.textContent.trim()) {
-        // console.log('发现直接文本子节点:', child.textContent.trim());
-        return true;
-      }
-    }
-    
-    return false;
-  }
 
   showTooltip(element, event) {
     // console.log('=== showTooltip 开始执行 ===');
@@ -857,71 +805,6 @@ class TranslationTooltip {
       }
       // console.log('统一翻译处理器没有结果，使用降级方法');
     }
-    
-    // 降级到原有方法
-    // this.showTooltipFallback(element, event);
-  }
-
-  showTooltipFallback(element, event) {
-    // console.log('=== showTooltipFallback 开始执行 ===');
-    
-    // 检查是否应该使用文本段翻译
-    if (this.shouldUseTextSegmentTranslation(element)) {
-      // console.log('使用文本段翻译处理元素');
-      this.showTextSegmentTooltip(element, event);
-      return;
-    }
-    
-    // console.log('使用简单文本翻译处理元素');
-    // 原有的简单文本翻译逻辑
-    const text = this.extractElementText(element);
-    // console.log('提取的文本:', text);
-    
-    if (!text) {
-      // console.log('没有提取到文本，退出');
-      return;
-    }
-
-    const translation = this.getTranslation(text, element);
-    // console.log('翻译结果:', translation);
-    // console.log('翻译字典大小:', Object.keys(this.translationDict).length);
-    
-    // if (!translation || translation === text) {
-    if (!translation) {
-      // console.log('没有找到翻译或翻译与原文相同，退出');
-      return;
-    }
-
-    // console.log('准备显示tooltip');
-    this.currentElement = element;
-    this.tooltip.textContent = translation;
-    this.positionTooltip(event);
-    
-    // 强制设置显示状态
-    this.tooltip.style.display = 'block';
-    this.tooltip.style.visibility = 'visible';
-    
-    // console.log('Tooltip位置:', {
-//       left: this.tooltip.style.left,
-//       top: this.tooltip.style.top,
-//       display: this.tooltip.style.display,
-//       visibility: this.tooltip.style.visibility
-
-// });
-    
-    // 使用requestAnimationFrame确保样式应用后再显示动画
-    requestAnimationFrame(() => {
-      this.tooltip.style.setProperty('opacity', '1', 'important');
-      this.tooltip.style.setProperty('transform', 'translateY(0)', 'important');
-      // console.log('Tooltip显示动画完成');
-      // console.log('最终Tooltip状态:', {
-//         display: this.tooltip.style.display,
-//         visibility: this.tooltip.style.visibility,
-//         opacity: this.tooltip.style.opacity,
-//         transform: this.tooltip.style.transform
-
-//       });
-});
   }
 
   hideTooltip(event) {
